@@ -1,0 +1,25 @@
+services:  
+  video-processor:
+      image: video-transcoder:latest
+      container_name: video-processor
+      environment:
+        STORAGE_REGION: ${STORAGE_REGION}
+        STORAGE_ACCESS_KEY: ${STORAGE_ACCESS_KEY}
+        STORAGE_SECRET_KEY: ${STORAGE_SECRET_KEY}
+        STORAGE_BUCKET: ${STORAGE_BUCKET}
+        STORAGE_ENDPOINT: ${STORAGE_ENDPOINT} 
+        EXTERNAL_STORAGE_ENDPOINT: ${EXTERNAL_STORAGE_ENDPOINT} # additionally added:needed to have proper url as using docker dns in STORAGE_ENDPOINT # not needed for AWS
+        STORAGE_FORCE_PATH_STYLE: ${STORAGE_FORCE_PATH_STYLE} # # For AWS,STORAGE_FORCE_PATH_STYLE: false
+        # RabbitMQ
+        RABBIT_QUEUE: ${RABBIT_QUEUE}
+        RABBIT_URL: ${RABBIT_URL}
+      networks:
+        - socialmedia # needed for connecting with S3(minio)
+      # deploy:
+      #     resources:
+      #       limits:
+      #         cpus: '8.0'  # Allocating 4 logical CPUs
+      #         memory: 10G    # Allocating 8GB of memory
+networks:
+  socialmedia:
+   external: true

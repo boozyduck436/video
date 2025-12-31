@@ -1,0 +1,11 @@
+# Use the official Node.js image based on Debian (more compatibility)
+FROM node:trixie-slim
+
+# Install FFmpeg
+RUN apt-get update && apt-get install -y ffmpeg bash && rm -rf /var/lib/apt/lists/*
+
+# Set the working directory inside the container
+WORKDIR /app
+
+# Default command to run a bash shell (interactive use)
+CMD ["bash"]

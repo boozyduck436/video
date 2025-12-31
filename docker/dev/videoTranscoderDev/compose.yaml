@@ -1,0 +1,22 @@
+services:
+    node:
+      image: ffmpeg-node
+      container_name: video-processor-node-dev
+      volumes:
+        - ../../backend/videoTranscoder:/app/
+      working_dir: /app
+      user: 1000:1000
+      stdin_open: true
+      tty: true
+      networks:
+        - socialmedia
+      # deploy:
+      #     resources:
+      #       limits:
+      #         cpus: '8.0'  # Allocating 4 logical CPUs
+      #         memory: 10G    # Allocating 8GB of memory
+
+
+networks:
+  socialmedia:
+    external: true
