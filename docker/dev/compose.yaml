@@ -1,35 +1,4 @@
 services:
-    api-node-dev:
-      image: node:trixie-slim
-      container_name: api-service-node-dev
-      ports:
-        - 127.0.0.1:8001:${PORT}
-      volumes:
-        - ../../../backend/api:/app/
-      working_dir: /app 
-      command: sh -c "npm run dev"
-      networks:
-        - socialmedia
-      user: 1000:1000
-
-  
-    pgadmin:
-      image: dpage/pgadmin4:latest
-      container_name: pgadmin
-      restart: always
-      environment:
-        PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL}
-        PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD}
-      networks:
-        - socialmedia
-      ports:
-        - "127.0.0.1:5050:80"
-      # depends_on:
-      #   - postgres
-      volumes:
-        - pgadmin-data:/var/lib/pgadmin
-
-
     mongodb:
       image: mongo
       container_name: mongodb
@@ -40,9 +9,9 @@ services:
       ports:
         - 127.0.0.1:27017:27017
       networks:
-          - socialmedia
+          - streamtube
       volumes:
-        - MongoDB:/data/db
+        - mongodb-data:/data/db
 
     postgres:
       image: postgres:18
@@ -52,16 +21,27 @@ services:
         POSTGRES_USER: ${PGUSER}
         POSTGRES_PASSWORD: ${PGPASSWORD}
         POSTGRES_DB: ${PGDATABASE}
-        # Optional: explicitly set PGDATA to the new path used by version 18
-        PGDATA: /var/lib/postgresql/18/docker
       ports:
         - "127.0.0.1:5432:5432"
       networks:
-          - socialmedia
+          - streamtube
       volumes:
-        # Note: For PostgreSQL 18+, the recommended mount root is /var/lib/postgresql
         - pg-data:/var/lib/postgresql
-
+    pgadmin:
+      image: dpage/pgadmin4:latest
+      container_name: pgadmin
+      restart: always
+      environment:
+        PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL}
+        PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD}
+      networks:
+        - streamtube
+      ports:
+        - "127.0.0.1:5050:80"
+      depends_on:
+        - postgres
+      volumes:
+        - pgadmin-data:/var/lib/pgadmin
 
     bucket-storage:
       image: minio/minio:latest
@@ -81,32 +61,35 @@ services:
         - 9000:9000  # HTTP port for MinIO
         - 127.0.0.1:9001:9001  # Port for MinIO Web UI (optional)
       networks:
-          - socialmedia
+          - streamtube
       volumes:
         - minio-data:/data
-        - ../../../infra/s3/:/polices/
+        - ../../infra/s3/:/config/
       command: server /data --console-address ":9001"
       restart: always
       
     rabbitmq:
         container_name: rabbitmq
         image: rabbitmq:4-management
+        volumes:
+          - rabbitmq-data:/var/lib/rabbitmq  
         ports:
             - 5672:5672
             - 127.0.0.1:15672:15672
         networks:
-          - socialmedia
+          - streamtube
         restart: always
 
 
 volumes:
-  MongoDB:
+  mongodb-data:
   minio-data:
   pg-data:
   pgadmin-data:
+  rabbitmq-data:
 
 networks:
-  socialmedia:
+  streamtube:
    external: true
 
 

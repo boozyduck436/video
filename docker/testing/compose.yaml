@@ -1,5 +1,4 @@
 services:
-
   mongodb:
     image: mongo
     container_name: mongodb
@@ -10,9 +9,9 @@ services:
     ports:
       - 127.0.0.1:27017:27017
     networks:
-        - socialmedia
+        - streamtube
     volumes:
-      - MongoDB:/data/db
+      - mongoDB-data:/data/db
 
   postgres:
     image: postgres:18
@@ -22,14 +21,11 @@ services:
       POSTGRES_USER: ${PGUSER}
       POSTGRES_PASSWORD: ${PGPASSWORD}
       POSTGRES_DB: ${PGDATABASE}
-      # Optional: explicitly set PGDATA to the new path used by version 18
-      PGDATA: /var/lib/postgresql/18/docker
     ports:
       - "127.0.0.1:5432:5432"
     networks:
-        - socialmedia
+        - streamtube
     volumes:
-      # Note: For PostgreSQL 18+, the recommended mount root is /var/lib/postgresql
       - pg-data:/var/lib/postgresql
 
 
@@ -51,31 +47,34 @@ services:
       - 9000:9000  # HTTP port for MinIO
       - 127.0.0.1:9001:9001  # Port for MinIO Web UI (optional)
     networks:
-        - socialmedia
+        - streamtube
     volumes:
       - minio-data:/data
-      - ./infra/s3/sts-socialmedia-readonly-policy.json:/polices/sts-socialmedia-readonly-policy.json
-    command: server /data --console-address ":9001"
+      - ../../infra/s3/:/config
+    command: server /data --console-address ":9001" 
     restart: always
     
   rabbitmq:
       container_name: rabbitmq
       image: rabbitmq:4-management
+      volumes:
+          - rabbitmq-data:/var/lib/rabbitmq 
       ports:
           - 5672:5672
           - 127.0.0.1:15672:15672
       networks:
-        - socialmedia
+        - streamtube
       restart: always
 
 
 volumes:
-  MongoDB:
+  mongodb-data:
   minio-data:
   pg-data:
+  rabbitmq-data:
 
 networks:
-  socialmedia:
+  streamtube:
    external: true
 
 

@@ -1,6 +1,6 @@
 services:  
-  streamtube-api:
-    image: streamtube-api:latest
+  streamtube-app:
+    image: streamtube-app:latest
     environment:
       DB_ROOT_USERNAME: ${DB_ROOT_USERNAME}
       DB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
@@ -15,7 +15,7 @@ services:
     ports:
       - 127.0.0.1:8001:${PORT}
     networks:
-        - socialmedia
+        - streamtube
 networks:
-  socialmedia:
+  streamtube:
    external: true

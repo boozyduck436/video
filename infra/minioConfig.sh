@@ -8,7 +8,7 @@ mc mb myminio/streamtube
 mc admin user add myminio stsuser stspassword
 
 # add policy to minio
-mc admin policy create myminio stsuserpolicy /polices/sts-streamtube-readonly-policy.json
+mc admin policy create myminio stsuserpolicy /config/sts-streamtube-readonly-policy.json
 
 # attach policy to second user
 mc admin policy attach myminio stsuserpolicy --user stsuser

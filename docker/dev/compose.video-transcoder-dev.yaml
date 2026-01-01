@@ -1,7 +1,7 @@
 services:
     node:
       image: ffmpeg-node
-      container_name: video-processor-node-dev
+      container_name: node-video-processor-dev-node
       volumes:
         - ../../backend/videoTranscoder:/app/
       working_dir: /app
@@ -9,7 +9,7 @@ services:
       stdin_open: true
       tty: true
       networks:
-        - socialmedia
+        - streamtube
       # deploy:
       #     resources:
       #       limits:
@@ -18,5 +18,5 @@ services:
 
 
 networks:
-  socialmedia:
+  streamtube:
     external: true

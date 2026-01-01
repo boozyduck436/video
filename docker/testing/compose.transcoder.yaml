@@ -14,12 +14,12 @@ services:
         RABBIT_QUEUE: ${RABBIT_QUEUE}
         RABBIT_URL: ${RABBIT_URL}
       networks:
-        - socialmedia # needed for connecting with S3(minio)
+        - streamtube # needed for connecting with S3(minio)
       # deploy:
       #     resources:
       #       limits:
       #         cpus: '8.0'  # Allocating 4 logical CPUs
       #         memory: 10G    # Allocating 8GB of memory
 networks:
-  socialmedia:
+  streamtube:
    external: true

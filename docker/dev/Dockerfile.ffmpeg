@@ -1,4 +1,4 @@
-# Use the official Node.js image based on Debian (more compatibility)
+# node(debian based)
 FROM node:trixie-slim
 
 # Install FFmpeg
