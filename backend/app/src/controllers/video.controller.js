@@ -242,7 +242,7 @@ const togglePublishStatus = asyncHandler(async (req, res) => {
     const { videoId } = req.params
 
     if(!videoId){
-        throw ApiError(400,"video does not found")
+        throw new ApiError(400,"video does not found")
     }
     
     const video=await Video.findByIdAndUpdate(videoId,

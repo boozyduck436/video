@@ -14,4 +14,4 @@ services:
 
 networks:
   streamtube:
-   external: true 
+   external: true

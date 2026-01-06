@@ -6,7 +6,7 @@ import jwt from "jsonwebtoken"
 import mongoose from "mongoose";
 import { deleteByPrefixOnS3, generatePresignedUploadUrl, stsOnS3 } from "../services/s3.service.js";
 import { generateUserProfileImageKey,generateUserCoverImageKey, generateUrl,  } from "../utils/s3KeyGenerators.js";
-import prisma from "../config/prisma.config.js";
+import prisma from "../config/postgres.config.js";
 import { console } from "inspector";
 
 
@@ -537,7 +537,7 @@ const getUserChannelProfile= asyncHandler(async(req,res)=>{
 })
 
 const getWatchHistory =asyncHandler(async(req,res)=>{
-    if(!req.user._id){new ApiError(400,"user not found")}
+    if(!req.user._id){throw new ApiError(400,"user not found")}
     
     const user= await User.aggregate([
         {
@@ -585,7 +585,7 @@ const getWatchHistory =asyncHandler(async(req,res)=>{
 
     return res
     .status(200)
-    .json(new ApiResponse(200,getWatchHistory[0],"watch history fetched successfully"))
+    .json(new ApiResponse(200,user[0],"watch history fetched successfully"))
     
 })
 
