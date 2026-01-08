@@ -1,7 +1,54 @@
 services:
+    app-node-dev:
+      image: node:trixie-slim
+      ports:
+        - 127.0.0.1:8001:${PORT}
+      volumes:
+        - ./backend/app:/app/
+      working_dir: /app 
+      command: sh -c "npm run dev"
+      depends_on:
+        - mongodb
+        - postgres
+        - bucket-storage
+      networks:
+        - streamtube-dev
+      user: 1000:1000
+
+    video-transcoder-worker-node-dev:
+      build:
+        context: ./backend/videoTranscoder
+        dockerfile: Dockerfile.ffmpeg
+      image: ffmpeg-node
+      volumes:
+        - ./backend/videoTranscoder:/app/
+      working_dir: /app
+      user: 1000:1000
+      stdin_open: true
+      tty: true
+      networks:
+        - streamtube-dev
+      # DEV ONLY: Simulate KEDA "Scale-to-Zero" behavior.
+      # In Production (K8s), KEDA triggers this container only when messages exist.
+      # In Docker Compose, KEDA is absent, so we use this loop to keep the 
+      # container alive and polling for new work.  
+      command: >
+        sh -c "  
+          while true; do 
+            echo 'Worker checking for jobs';
+            npm start;
+            echo 'Done or Empty. Sleeping 5s';
+            sleep 5;
+          done
+        "
+      # deploy:
+      #     resources:
+      #       limits:
+      #         cpus: '8.0'  # Allocating 4 logical CPUs
+      #         memory: 10G    # Allocating 8GB of memory
+
     mongodb:
       image: mongo
-      container_name: mongodb
       restart: always
       environment:
         MONGO_INITDB_ROOT_USERNAME: ${DB_ROOT_USERNAME}
@@ -9,13 +56,12 @@ services:
       ports:
         - 127.0.0.1:27017:27017
       networks:
-          - streamtube
+          - streamtube-dev
       volumes:
-        - mongodb-data:/data/db
+        - mongodb-dev-data:/data/db
 
     postgres:
       image: postgres:18
-      container_name: postgresdb
       restart: always
       environment:
         POSTGRES_USER: ${PGUSER}
@@ -24,28 +70,26 @@ services:
       ports:
         - "127.0.0.1:5432:5432"
       networks:
-          - streamtube
+          - streamtube-dev
       volumes:
-        - pg-data:/var/lib/postgresql
+        - pg-dev-data:/var/lib/postgresql
     pgadmin:
       image: dpage/pgadmin4:latest
-      container_name: pgadmin
       restart: always
       environment:
         PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL}
         PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD}
       networks:
-        - streamtube
+        - streamtube-dev
       ports:
         - "127.0.0.1:5050:80"
       depends_on:
         - postgres
       volumes:
-        - pgadmin-data:/var/lib/pgadmin
+        - pgadmin-dev-data:/var/lib/pgadmin
 
     bucket-storage:
       image: minio/minio:latest
-      container_name: minio 
       environment:
         MINIO_ROOT_USER: ${STORAGE_ACCESS_KEY}
         MINIO_ROOT_PASSWORD: ${STORAGE_SECRET_KEY}
@@ -57,42 +101,37 @@ services:
         MINIO_NOTIFY_AMQP_ROUTING_KEY_rabbitmq1: ${MINIO_NOTIFY_AMQP_ROUTING_KEY_rabbitmq1}
         MINIO_NOTIFY_AMQP_DELIVERY_MODE_rabbitmq1: ${MINIO_NOTIFY_AMQP_DELIVERY_MODE_rabbitmq1}
         MINIO_NOTIFY_AMQP_DURABLE_rabbitmq1: ${MINIO_NOTIFY_AMQP_DURABLE_rabbitmq1}
+      depends_on:
+        - rabbitmq
       ports:
-        - 9000:9000  # HTTP port for MinIO
+        - 127.0.0.1:9000:9000  # HTTP port for MinIO
         - 127.0.0.1:9001:9001  # Port for MinIO Web UI (optional)
       networks:
-          - streamtube
+          - streamtube-dev
       volumes:
-        - minio-data:/data
-        - ../../infra/s3/:/config/
+        - minio-dev-data:/data
+        - ./infra/s3/:/config/
       command: server /data --console-address ":9001"
       restart: always
       
     rabbitmq:
-        container_name: rabbitmq
         image: rabbitmq:4-management
         volumes:
-          - rabbitmq-data:/var/lib/rabbitmq  
+          - rabbitmq-dev-data:/var/lib/rabbitmq  
         ports:
-            - 5672:5672
+            - 127.0.0.1:5672:5672
             - 127.0.0.1:15672:15672
         networks:
-          - streamtube
+          - streamtube-dev
         restart: always
 
 
 volumes:
-  mongodb-data:
-  minio-data:
-  pg-data:
-  pgadmin-data:
-  rabbitmq-data:
+  mongodb-dev-data:
+  minio-dev-data:
+  pg-dev-data:
+  pgadmin-dev-data:
+  rabbitmq-dev-data:
 
 networks:
-  streamtube:
-   external: true
-
-
-
-
-
+  streamtube-dev:

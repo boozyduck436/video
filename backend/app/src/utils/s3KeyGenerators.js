@@ -29,7 +29,7 @@ function generateVideoKey(userId,videoId) {
 }
 
 function generateUrl(Key){
-  return `${process.env.EXTERNAL_STORAGE_ENDPOINT}/${process.env.STORAGE_BUCKET}/${Key}`
+  return `${process.env.STORAGE_ENDPOINT}/${process.env.STORAGE_BUCKET}/${Key}`
 }
 // testing
 console.log(generateUserProfileImageKey("123","image/png"))

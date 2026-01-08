@@ -1,0 +1,143 @@
+services:
+  streamtube-app:
+    build: ./backend/app
+    image: streamtube-app
+    environment:
+      DB_ROOT_USERNAME: ${DB_ROOT_USERNAME}
+      DB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+      PORT: ${PORT}
+      MONGODB_URI: ${MONGODB_URI}
+      AUTH_SOURCE: ${AUTH_SOURCE}
+      CORS_ORIGIN: ${CORS_ORIGIN}
+      ACCESS_TOKEN_SECRET: ${ACCESS_TOKEN_SECRET} 
+      ACCESS_TOKEN_EXPIRE: ${ACCESS_TOKEN_EXPIRE}
+      REFRESH_TOKEN_SECRET: ${REFRESH_TOKEN_SECRET}
+      REFRESH_TOKEN_EXPIRE: ${REFRESH_TOKEN_EXPIRE}
+      DATABASE_URL: ${DATABASE_URL}
+      STORAGE_REGION: ${STORAGE_REGION}
+      STORAGE_ACCESS_KEY: ${STORAGE_ACCESS_KEY}
+      STORAGE_SECRET_KEY: ${STORAGE_SECRET_KEY}
+      STORAGE_BUCKET: ${STORAGE_BUCKET}
+      STORAGE_STS_USER: ${STORAGE_STS_USER}
+      STORAGE_STS_PASSWORD: ${STORAGE_STS_PASSWORD}
+      STORAGE_ENDPOINT: ${STORAGE_ENDPOINT}
+      STORAGE_EXTERNAL_ENDPOINT: ${STORAGE_EXTERNAL_ENDPOINT}
+      STORAGE_FORCE_PATH_STYLE: ${STORAGE_FORCE_PATH_STYLE}
+    depends_on:
+      - mongodb
+      - postgres
+      - bucket-storage
+    ports:
+      - 127.0.0.1:8001:${PORT}
+    networks:
+        - streamtube
+
+  video-transcoder-worker:
+      build: ./backend/videoTranscoder
+      image: video-transcoder
+      environment:
+        STORAGE_REGION: ${STORAGE_REGION}
+        STORAGE_ACCESS_KEY: ${STORAGE_ACCESS_KEY}
+        STORAGE_SECRET_KEY: ${STORAGE_SECRET_KEY}
+        STORAGE_BUCKET: ${STORAGE_BUCKET}
+        STORAGE_ENDPOINT: ${STORAGE_ENDPOINT} 
+        STORAGE_FORCE_PATH_STYLE: ${STORAGE_FORCE_PATH_STYLE} # # For AWS,STORAGE_FORCE_PATH_STYLE: false
+        # RabbitMQ
+        RABBIT_QUEUE: ${RABBIT_QUEUE}
+        RABBIT_URL: ${RABBIT_URL}
+      networks:
+        - streamtube
+      # DEV ONLY: Simulate KEDA "Scale-to-Zero" behavior.
+      # In Production (K8s), KEDA triggers this container only when messages exist.
+      # In Docker Compose, KEDA is absent, so we use this loop to keep the 
+      # container alive and polling for new work.  
+      command: > 
+        sh -c "
+          while true; do 
+            echo 'Worker checking for jobs';
+            npm start;
+            echo 'Done or Empty. Sleeping 5s';
+            sleep 5;
+          done
+        "
+      # deploy:
+      #     resources:
+      #       limits:
+      #         cpus: '8.0'  # Allocating 4 logical CPUs
+      #         memory: 10G    # Allocating 8GB of memory
+
+  
+  mongodb:
+    image: mongo
+    restart: always
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${DB_ROOT_USERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+    ports:
+      - 127.0.0.1:27017:27017
+    networks:
+        - streamtube
+    volumes:
+      - mongodb-data:/data/db
+
+  postgres:
+    image: postgres:18
+    restart: always
+    environment:
+      POSTGRES_USER: ${PGUSER}
+      POSTGRES_PASSWORD: ${PGPASSWORD}
+      POSTGRES_DB: ${PGDATABASE}
+    ports:
+      - "127.0.0.1:5432:5432"
+    networks:
+        - streamtube
+    volumes:
+      - pg-data:/var/lib/postgresql
+
+
+  bucket-storage:
+    image: minio/minio:latest
+    environment:
+      MINIO_ROOT_USER: ${STORAGE_ACCESS_KEY}
+      MINIO_ROOT_PASSWORD: ${STORAGE_SECRET_KEY}
+      # for event notfication
+      MINIO_NOTIFY_AMQP_ENABLE_rabbitmq1: ${MINIO_NOTIFY_AMQP_ENABLE_rabbitmq1}
+      MINIO_NOTIFY_AMQP_URL_rabbitmq1: ${MINIO_NOTIFY_AMQP_URL_rabbitmq1}
+      MINIO_NOTIFY_AMQP_EXCHANGE_rabbitmq1: ${MINIO_NOTIFY_AMQP_EXCHANGE_rabbitmq1}
+      MINIO_NOTIFY_AMQP_EXCHANGE_TYPE_rabbitmq1: ${MINIO_NOTIFY_AMQP_EXCHANGE_TYPE_rabbitmq1}
+      MINIO_NOTIFY_AMQP_ROUTING_KEY_rabbitmq1: ${MINIO_NOTIFY_AMQP_ROUTING_KEY_rabbitmq1}
+      MINIO_NOTIFY_AMQP_DELIVERY_MODE_rabbitmq1: ${MINIO_NOTIFY_AMQP_DELIVERY_MODE_rabbitmq1}
+      MINIO_NOTIFY_AMQP_DURABLE_rabbitmq1: ${MINIO_NOTIFY_AMQP_DURABLE_rabbitmq1}
+    depends_on:
+      - rabbitmq
+    ports:
+      - 127.0.0.1:9000:9000  # HTTP port for MinIO
+      - 127.0.0.1:9001:9001  # Port for MinIO Web UI (optional)
+    networks:
+      - streamtube
+    volumes:
+      - minio-data:/data
+      - ./infra/s3/:/config
+    command: server /data --console-address ":9001" 
+    restart: always
+    
+  rabbitmq:
+      image: rabbitmq:4-management
+      volumes:
+        - rabbitmq-data:/var/lib/rabbitmq 
+      ports:
+        - 127.0.0.1:5672:5672
+        - 127.0.0.1:15672:15672
+      networks:
+        - streamtube
+      restart: always
+
+
+volumes:
+  mongodb-data:
+  minio-data:
+  pg-data:
+  rabbitmq-data:
+
+networks:
+  streamtube:

@@ -1,8 +1,9 @@
-import {s3Client,stsClient} from '../config/s3.config.js';
+import {s3Client,s3PresignClient,stsClient} from '../config/s3.config.js';
 import { PutObjectCommand, GetObjectCommand, DeleteObjectCommand, ListObjectsV2Command, DeleteObjectsCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import fs from 'fs';
 import { ApiError } from '../utils/ApiError.js';
+import { ApiResponse } from '../utils/ApiResponse.js';
 import { AssumeRoleCommand } from '@aws-sdk/client-sts';
 
 
@@ -19,10 +20,9 @@ const uploadObjectOnS3= async function (file,Key) {// uploding local file to s3 
       });
     
       await s3Client.send(command);
-    
       return {
         Key,
-        url: `${process.env.STORAGE_ENDPOINT}/${process.env.STORAGE_BUCKET}/${Key}`,
+        url: `${process.env.STORAGE__EXTERNAL_ENDPOINT}/${process.env.STORAGE_BUCKET}/${Key}`|| null,
       };
   } catch (error) {
     throw new ApiError(500,`uploadOnS3 error: ${error}`)
@@ -36,8 +36,7 @@ const generatePresignedDownloadUrl= async function (Key,time="300") {
         Bucket: process.env.STORAGE_BUCKET,
         Key: Key,
       })
-      let url= await getSignedUrl(s3Client,command,{expiresIn: time})
-      url = url.replace("bucket-storage", "localhost");
+      let url= await getSignedUrl(s3PresignClient,command,{expiresIn: time})
 
       return url
   } catch (error) {
@@ -56,7 +55,7 @@ const generatePresignedUploadUrl= async function(ContentType,Key, time="300"){
             ContentType: ContentType,
           });
         
-        let uploadUrl= await getSignedUrl(s3Client,command,{expiresIn: time})
+        let uploadUrl= await getSignedUrl(s3PresignClient,command,{expiresIn: time})
         return uploadUrl
         
   } catch (error) {
@@ -140,25 +139,23 @@ try {
 
     const res = await stsClient.send(command);
 
-    return res.Credentials;
+    const endpoint = process.env.STORAGE__EXTERNAL_ENDPOINT || process.env.STORAGE_ENDPOINT || null;
+    const forcePathStyle = String(process.env.STORAGE_FORCE_PATH_STYLE).toLowerCase() === "true";
+
+    return {
+      credentials: res.Credentials,
+      endpoint,
+      region: process.env.STORAGE_REGION || null,
+      forcePathStyle,
+      bucket: process.env.STORAGE_BUCKET || null,
+    };
 
 } catch (error) {
-  console.log(`sts error: ${error}`)
+  throw new ApiError(`sts error: ${error}`)
   
 }
   
 }
-
-
-
-const testurl= await generatePresignedUploadUrl("text/plain","imagee") // image/png
-console.log(testurl)
-//await uploadTestFile(testurl)
-
-
-
-
-
 
 
 
