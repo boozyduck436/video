@@ -1,0 +1,50 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: scalestream-ingress
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: app.scalestream.local
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: scalestream-app
+                port:
+                  number: 8001
+
+    - host: minio.scalestream.local
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: minio
+                port:
+                  number: 9000
+
+    - host: minio-console.scalestream.local
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: minio
+                port:
+                  number: 9001
+
+    - host: rabbitmq-console.scalestream.local
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: rabbitmq
+                port:
+                  number: 15672 

@@ -29,16 +29,20 @@ function generateVideoKey(userId,videoId) {
 }
 
 function generateUrl(Key){
-  return `${process.env.STORAGE_ENDPOINT}/${process.env.STORAGE_BUCKET}/${Key}`
-}
-// testing
-console.log(generateUserProfileImageKey("123","image/png"))
+  if(process.env.STORAGE_EXTERNAL_ENDPOINT){
+    return `${process.env.STORAGE_EXTERNAL_ENDPOINT}/${process.env.STORAGE_BUCKET}/${Key}`
 
-  export {
+  }else {
+    return `${process.env.STORAGE_ENDPOINT}/${process.env.STORAGE_BUCKET}/${Key}`
+  }
+  
+}
+
+export{
     generateUserProfileImageKey,
     generateUserCoverImageKey,
     generateThumbnailKey,
     generateTempVideoKey,
     generateVideoKey,
     generateUrl  
-  }
+}

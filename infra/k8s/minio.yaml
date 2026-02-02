@@ -1,0 +1,166 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: minio
+spec:
+  ports:
+    - port: 9000
+      targetPort: 9000
+      name: api
+    - port: 9001
+      targetPort: 9001
+      name: console
+  selector:
+    app: minio
+  type: ClusterIP
+
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: minio
+spec:
+  serviceName: "minio"
+  replicas: 1
+  selector:
+    matchLabels:
+      app: minio
+  template:
+    metadata:
+      labels:
+        app: minio
+    spec:
+      containers:
+        - name: minio
+          image: minio/minio:latest
+          command:
+            - /bin/sh
+            - -c
+            - minio server /data --console-address :9001
+          env:
+            - name: MINIO_ROOT_USER
+              valueFrom:
+                secretKeyRef:
+                  name: scalestream-secrets
+                  key: STORAGE_ACCESS_KEY
+            - name: MINIO_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: scalestream-secrets
+                  key: STORAGE_SECRET_KEY
+            - name: MINIO_NOTIFY_AMQP_ENABLE_rabbitmq1
+              valueFrom:
+                secretKeyRef:
+                  name: scalestream-secrets
+                  key: MINIO_NOTIFY_AMQP_ENABLE_rabbitmq1
+            - name: MINIO_NOTIFY_AMQP_URL_rabbitmq1
+              valueFrom:
+                secretKeyRef:
+                  name: scalestream-secrets
+                  key: MINIO_NOTIFY_AMQP_URL_rabbitmq1
+            - name: MINIO_NOTIFY_AMQP_EXCHANGE_rabbitmq1
+              valueFrom:
+                secretKeyRef:
+                  name: scalestream-secrets
+                  key: MINIO_NOTIFY_AMQP_EXCHANGE_rabbitmq1
+            - name: MINIO_NOTIFY_AMQP_EXCHANGE_TYPE_rabbitmq1
+              valueFrom:
+                secretKeyRef:
+                  name: scalestream-secrets
+                  key: MINIO_NOTIFY_AMQP_EXCHANGE_TYPE_rabbitmq1
+            - name: MINIO_NOTIFY_AMQP_ROUTING_KEY_rabbitmq1
+              valueFrom:
+                secretKeyRef:
+                  name: scalestream-secrets
+                  key: MINIO_NOTIFY_AMQP_ROUTING_KEY_rabbitmq1
+            - name: MINIO_NOTIFY_AMQP_DURABLE_rabbitmq1
+              valueFrom:
+                secretKeyRef:
+                  name: scalestream-secrets
+                  key: MINIO_NOTIFY_AMQP_DURABLE_rabbitmq1
+            - name: MINIO_NOTIFY_AMQP_DELIVERY_MODE_rabbitmq1
+              valueFrom:
+                secretKeyRef:
+                  name: scalestream-secrets
+                  key: MINIO_NOTIFY_AMQP_DELIVERY_MODE_rabbitmq1
+
+          ports:
+            - containerPort: 9000
+            - containerPort: 9001
+
+          readinessProbe:
+            httpGet:
+              path: /minio/health/ready
+              port: 9000
+            initialDelaySeconds: 20
+            periodSeconds: 10
+            failureThreshold: 3
+            
+          livenessProbe:
+            httpGet:
+              path: /minio/health/live
+              port: 9000
+            initialDelaySeconds: 40
+            periodSeconds: 20
+            failureThreshold: 5
+
+          volumeMounts:
+            - name: minio-data
+              mountPath: /data
+  volumeClaimTemplates:
+    - metadata:
+        name: minio-data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 5Gi
+
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: minio-init
+spec:
+  ttlSecondsAfterFinished: 100
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: minio-init
+          image: minio/mc:latest
+          command: ["/bin/sh", "/setup/init.sh"]
+          env:
+            - name: MINIO_ROOT_USER
+              valueFrom:
+                secretKeyRef:
+                  name: scalestream-secrets
+                  key: STORAGE_ACCESS_KEY
+            - name: MINIO_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: scalestream-secrets
+                  key: STORAGE_SECRET_KEY
+            - name: STORAGE_STS_USER
+              valueFrom:
+                secretKeyRef:
+                  name: scalestream-secrets
+                  key: STORAGE_STS_USER
+            - name: STORAGE_STS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: scalestream-secrets
+                  key: STORAGE_STS_PASSWORD
+            - name: STORAGE_ENDPOINT
+              valueFrom:
+                secretKeyRef:
+                  name: scalestream-secrets
+                  key: STORAGE_ENDPOINT
+          volumeMounts:
+            - name: setup-files
+              mountPath: /setup
+      volumes:
+        - name: setup-files
+          configMap:
+            name: minio-setup-files
+            defaultMode: 0777

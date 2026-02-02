@@ -22,7 +22,7 @@ const uploadObjectOnS3= async function (file,Key) {// uploding local file to s3 
       await s3Client.send(command);
       return {
         Key,
-        url: `${process.env.STORAGE__EXTERNAL_ENDPOINT}/${process.env.STORAGE_BUCKET}/${Key}`|| null,
+        url: `${process.env.STORAGE_EXTERNAL_ENDPOINT}/${process.env.STORAGE_BUCKET}/${Key}`|| null,
       };
   } catch (error) {
     throw new ApiError(500,`uploadOnS3 error: ${error}`)
@@ -139,7 +139,7 @@ try {
 
     const res = await stsClient.send(command);
 
-    const endpoint = process.env.STORAGE__EXTERNAL_ENDPOINT || process.env.STORAGE_ENDPOINT || null;
+    const endpoint = process.env.STORAGE_EXTERNAL_ENDPOINT || process.env.STORAGE_ENDPOINT || null;
     const forcePathStyle = String(process.env.STORAGE_FORCE_PATH_STYLE).toLowerCase() === "true";
 
     return {

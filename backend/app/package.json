@@ -21,12 +21,12 @@
     "@types/pg": "^8.15.6",
     "nodemon": "^3.1.10",
     "prettier": "^3.6.2",
-    "prisma": "^7.0.1"
+    "prisma": "^6.19.2"
   },
   "dependencies": {
-    "@aws-sdk/client-s3": "^3.913.0",
-    "@aws-sdk/client-sts": "^3.940.0",
-    "@aws-sdk/s3-request-presigner": "^3.913.0",
+    "@aws-sdk/client-s3": "^3.893.0",
+    "@aws-sdk/client-sts": "^3.893.0",
+    "@aws-sdk/s3-request-presigner": "^3.893.0",
     "@casl/ability": "^6.7.5",
     "@prisma/adapter-pg": "^7.0.1",
     "@prisma/client": "^7.0.1",
@@ -38,7 +38,6 @@
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.18.0",
     "mongoose-aggregate-paginate-v2": "^1.1.4",
-    "multer": "^2.0.2",
     "pg": "^8.16.3"
   }
 }

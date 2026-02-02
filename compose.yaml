@@ -1,7 +1,7 @@
 services:
-  streamtube-app:
+  scalestream-app:
     build: ./backend/app
-    image: streamtube-app
+    image: scalestream-app
     environment:
       DB_ROOT_USERNAME: ${DB_ROOT_USERNAME}
       DB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
@@ -24,13 +24,22 @@ services:
       STORAGE_EXTERNAL_ENDPOINT: ${STORAGE_EXTERNAL_ENDPOINT}
       STORAGE_FORCE_PATH_STYLE: ${STORAGE_FORCE_PATH_STYLE}
     depends_on:
-      - mongodb
-      - postgres
-      - bucket-storage
+      mongodb:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      bucket-storage:
+        condition: service_healthy
     ports:
       - 127.0.0.1:8001:${PORT}
     networks:
-        - streamtube
+        - scalestream
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:8001/api/v1/healthcheck').then(res => process.exit(res.ok ? 0 : 1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
 
   video-transcoder-worker:
       build: ./backend/videoTranscoder
@@ -45,9 +54,12 @@ services:
         # RabbitMQ
         RABBIT_QUEUE: ${RABBIT_QUEUE}
         RABBIT_URL: ${RABBIT_URL}
+      depends_on:
+        bucket-storage:
+          condition: service_healthy
       networks:
-        - streamtube
-      # DEV ONLY: Simulate KEDA "Scale-to-Zero" behavior.
+        - scalestream
+      # DEV ONLY: Simulate KEDA behavior.
       # In Production (K8s), KEDA triggers this container only when messages exist.
       # In Docker Compose, KEDA is absent, so we use this loop to keep the 
       # container alive and polling for new work.  
@@ -74,11 +86,17 @@ services:
       MONGO_INITDB_ROOT_USERNAME: ${DB_ROOT_USERNAME}
       MONGO_INITDB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
     ports:
-      - 127.0.0.1:27017:27017
+      - 27017:27017
     networks:
-        - streamtube
+        - scalestream
     volumes:
       - mongodb-data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping').ok"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
 
   postgres:
     image: postgres:18
@@ -88,11 +106,16 @@ services:
       POSTGRES_PASSWORD: ${PGPASSWORD}
       POSTGRES_DB: ${PGDATABASE}
     ports:
-      - "127.0.0.1:5432:5432"
+      - "5432:5432"
     networks:
-        - streamtube
+        - scalestream
     volumes:
       - pg-data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${PGUSER} -d ${PGDATABASE}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
 
   bucket-storage:
@@ -109,28 +132,77 @@ services:
       MINIO_NOTIFY_AMQP_DELIVERY_MODE_rabbitmq1: ${MINIO_NOTIFY_AMQP_DELIVERY_MODE_rabbitmq1}
       MINIO_NOTIFY_AMQP_DURABLE_rabbitmq1: ${MINIO_NOTIFY_AMQP_DURABLE_rabbitmq1}
     depends_on:
-      - rabbitmq
+      rabbitmq:
+        condition: service_healthy
     ports:
       - 127.0.0.1:9000:9000  # HTTP port for MinIO
       - 127.0.0.1:9001:9001  # Port for MinIO Web UI (optional)
     networks:
-      - streamtube
+      - scalestream
     volumes:
       - minio-data:/data
-      - ./infra/s3/:/config
     command: server /data --console-address ":9001" 
     restart: always
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+  
+  bucket-storage-init:
+    image: minio/minio:latest
+    depends_on:
+      bucket-storage:
+        condition: service_healthy
+    environment:
+      MINIO_ROOT_USER: ${STORAGE_ACCESS_KEY}
+      MINIO_ROOT_PASSWORD: ${STORAGE_SECRET_KEY}
+      STORAGE_STS_USER: ${STORAGE_STS_USER}
+      STORAGE_STS_PASSWORD: ${STORAGE_STS_PASSWORD}
+      STORAGE_ENDPOINT: ${STORAGE_ENDPOINT}
+    volumes:
+      - ./infra/k8s/s3/init.sh/:/setup/init.sh
+      - ./infra/k8s/s3/sts-scalestream-readonly-policy.json:/setup/sts-scalestream-readonly-policy.json    
+    networks:
+      - scalestream
+    entrypoint: ["/bin/sh", "/setup/init.sh"]
+    
+
     
   rabbitmq:
       image: rabbitmq:4-management
       volumes:
         - rabbitmq-data:/var/lib/rabbitmq 
+      environment:
+        RABBITMQ_DEFAULT_USER: ${RABBITMQ_USERNAME}
+        RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD}
       ports:
-        - 127.0.0.1:5672:5672
+        - 5672:5672
         - 127.0.0.1:15672:15672
       networks:
-        - streamtube
+        - scalestream
+      healthcheck:
+        test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+        interval: 5s
+        timeout: 5s
+        retries: 5
       restart: always
+
+  rabbitmq-init:
+      image: rabbitmq:4-management
+      networks:
+        - scalestream
+      depends_on:
+        rabbitmq:
+          condition: service_healthy
+      environment:
+        RABBITMQ_HOST: ${RABBITMQ_HOST}
+        RABBITMQ_MANAGEMENT_PORT: ${RABBITMQ_MANAGEMENT_PORT}
+        RABBITMQ_DEFAULT_USER: ${RABBITMQ_USERNAME}
+        RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD}
+      volumes:
+        - ./infra/k8s/rabbitmq/init.sh:/usr/local/bin/init.sh:ro
+      entrypoint: ["/bin/sh", "/usr/local/bin/init.sh"]
 
 
 volumes:
@@ -140,4 +212,4 @@ volumes:
   rabbitmq-data:
 
 networks:
-  streamtube:
+  scalestream:

@@ -1,0 +1,28 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ingress.yaml
+  - app.yaml
+  - video-transcoder-scaledjob.yaml
+  - rabbitmq.yaml
+  - minio.yaml
+  - postgres.yaml
+  - mongodb.yaml
+
+configMapGenerator:
+  - name: rabbitmq-init-script
+    files:
+      - rabbitmq/init.sh
+  - name: minio-setup-files
+    files:
+      - s3/init.sh
+      - s3/sts-scalestream-readonly-policy.json
+
+secretGenerator:
+  - name: scalestream-secrets
+    envs:
+      - .env.k8s
+    type: Opaque
+    options: 
+      disableNameSuffixHash: true # because keda can't handle random suffix

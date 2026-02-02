@@ -1,0 +1,47 @@
+apiVersion: keda.sh/v1alpha1
+kind: ScaledJob
+metadata:
+  name: scalestream-video-transcoder
+  labels:
+    part-of: scalestream
+    component: worker
+spec:
+  pollingInterval: 2  #sec         
+  maxReplicaCount: 10  #parallel videos
+  successfulJobsHistoryLimit: 0 # Clean up success immediately
+  failedJobsHistoryLimit: 3  # Keep 3 failures for debugging
+
+  triggers:
+    - type: rabbitmq
+      metadata:
+        protocol: amqp
+        hostFromEnv: RABBITMQ_URL
+        queueName: s3-events
+        mode: QueueLength
+        value: "1"  # 1 message = 1 worker pod
+
+  jobTargetRef:
+    parallelism: 1
+    completions: 1
+    backoffLimit: 1
+    template:
+      metadata:
+        labels:
+          part-of: scalestream
+          component: worker     
+      spec:
+        restartPolicy: Never
+        containers:
+          - name: scalestream-video-transcoder
+            image: scalestream-video-transcoder
+            imagePullPolicy: Never 
+            resources:
+              requests:
+                memory: "512Mi"  
+                cpu: "500m"
+              limits:
+                memory: "2Gi"
+                cpu: "2000m"
+            envFrom:
+              - secretRef:
+                  name: scalestream-secrets

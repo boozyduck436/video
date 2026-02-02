@@ -11,7 +11,10 @@ const AUDIO_BITRATE = "128k";
 // Helper function to run FFmpeg
 function runFFmpeg(cmd, args) {
   return new Promise((resolve, reject) => {
-    const ffmpeg = spawn(cmd, args, { stdio: "inherit" }); // no shell: true
+    // Log command for debugging
+    //console.log(`Running: ${cmd} ${args.join(' ')}`);
+    
+    const ffmpeg = spawn(cmd, args, { stdio: "inherit" });
 
     ffmpeg.on("error", (err) => reject(err));
     ffmpeg.on("close", (code) => {
@@ -28,58 +31,71 @@ async function processHLS(INPUT, OUTPUT_PATH) {
   if (!existsSync(OUTPUT_PATH)) mkdirSync(OUTPUT_PATH, { recursive: true });
 
   // Cleanup old files
-  console.log("Removing old HLS files...");
-  const files = readdirSync(OUTPUT_PATH);
-  files.forEach((file) => {
-    if (file.match(new RegExp(`(_${BASENAME}\\.m3u8|_${BASENAME}_.*\\.ts|master_${BASENAME}\\.m3u8)`))) {
-      rmSync(join(OUTPUT_PATH, file));
-    }
-  });
+  try {
+    const files = readdirSync(OUTPUT_PATH);
+    files.forEach((file) => {
+      if (file.match(new RegExp(`(_${BASENAME}\\.m3u8|_${BASENAME}_.*\\.ts|master_${BASENAME}\\.m3u8)`))) {
+        rmSync(join(OUTPUT_PATH, file));
+      }
+    });
+  } catch (e) {
+    // ignore
+  }
 
   // Build FFmpeg filter_complex
-  console.log("Building FFmpeg command...");
   let filterComplex = "";
   for (let i = 0; i < RESOLUTIONS.length; i++) {
     filterComplex += `[0:v]scale='trunc(iw*min(${WIDTHS[i]}/iw\\,${HEIGHTS[i]}/ih)/2)*2':'trunc(ih*min(${WIDTHS[i]}/iw\\,${HEIGHTS[i]}/ih)/2)*2'[v${i}];`;
   }
+  filterComplex = filterComplex.slice(0, -1); // Remove trailing semicolon
 
-  // Build FFmpeg arguments
-  const args = ["-i", INPUT, "-filter_complex", filterComplex];
+  const args = ["-y", "-i", INPUT, "-filter_complex", filterComplex];
 
   for (let i = 0; i < RESOLUTIONS.length; i++) {
+    // MAP STREAMS
     args.push("-map", `[v${i}]`);
-    args.push("-c:v:" + i, "libx264");
-    args.push("-b:v:" + i, VID_BITRATES[i]);
-    args.push("-c:a:" + i, "aac");
-    args.push("-b:a:" + i, AUDIO_BITRATE);
+    
+    // CRITICAL FIX: Add '?' to make audio optional
+    // If input has no audio, this won't crash the script
+    args.push("-map", "0:a?"); 
 
+    // VIDEO SETTINGS
+    args.push("-c:v", "libx264");
+    args.push("-b:v", VID_BITRATES[i]);
+    args.push("-preset", "veryfast"); // Speed up encoding
+
+    // AUDIO SETTINGS
+    args.push("-c:a", "aac");
+    args.push("-b:a", AUDIO_BITRATE);
+
+    // HLS FLAGS
     const res = `${RESOLUTIONS[i]}p`;
     args.push("-f", "hls");
-    args.push("-hls_time", "10");
+    args.push("-hls_time", "5");
     args.push("-hls_list_size", "0");
-    args.push("-hls_segment_filename", `${OUTPUT_PATH}/${res}-${BASENAME}_%03d.ts`);
-    args.push(`${OUTPUT_PATH}/${res}-${BASENAME}.m3u8`);
+    args.push("-hls_segment_filename", join(OUTPUT_PATH, `${res}-${BASENAME}_%03d.ts`));
+    args.push(join(OUTPUT_PATH, `${res}-${BASENAME}.m3u8`));
   }
 
+  console.log(`args:\n\n ${args}`)
   console.log("Running FFmpeg...");
   await runFFmpeg("ffmpeg", args);
 
   // Create master playlist
   console.log("Creating master playlist...");
   let master = "#EXTM3U\n";
+  master += "#EXT-X-VERSION:3\n";
+  
   for (let i = 0; i < RESOLUTIONS.length; i++) {
     const res = `${RESOLUTIONS[i]}p`;
-    const width = WIDTHS[i];
-    const height = HEIGHTS[i];
-    const bandwidth = parseInt(VID_BITRATES[i]) * 1000;
-    master += `#EXT-X-STREAM-INF:BANDWIDTH=${bandwidth},RESOLUTION=${width}x${height}\n`;
+    // Note: If no audio, bandwidth calc might be slightly off, but acceptable
+    const bandwidth = parseInt(VID_BITRATES[i]) * 1000 + 128000; 
+    master += `#EXT-X-STREAM-INF:BANDWIDTH=${bandwidth},RESOLUTION=${WIDTHS[i]}x${HEIGHTS[i]}\n`;
     master += `${res}-${BASENAME}.m3u8\n`;
   }
 
   writeFileSync(join(OUTPUT_PATH, `master_${BASENAME}.m3u8`), master);
-
-  console.log("HLS streams generated successfully!");
-  console.log(`Master playlist: ${OUTPUT_PATH}/master_${BASENAME}.m3u8`);
+  console.log(`HLS Master Playlist: ${join(OUTPUT_PATH, `master_${BASENAME}.m3u8`)}`);
 }
 
 export { processHLS };
