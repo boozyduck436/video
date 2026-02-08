@@ -17,10 +17,10 @@ configMapGenerator:
   - name: minio-setup-files
     files:
       - s3/init.sh
-      - s3/sts-scalestream-readonly-policy.json
+      - s3/sts-streamtube-readonly-policy.json
 
 secretGenerator:
-  - name: scalestream-secrets
+  - name: streamtube-secrets
     envs:
       - .env.k8s
     type: Opaque

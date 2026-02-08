@@ -34,17 +34,17 @@ spec:
         - name: POSTGRES_USER
           valueFrom:
             secretKeyRef:
-              name: scalestream-secrets
+              name: streamtube-secrets
               key: PGUSER
         - name: POSTGRES_DB
           valueFrom:
             secretKeyRef:
-              name: scalestream-secrets
+              name: streamtube-secrets
               key: PGDATABASE
         - name: POSTGRES_PASSWORD
           valueFrom:
             secretKeyRef:
-              name: scalestream-secrets
+              name: streamtube-secrets
               key: PGPASSWORD
 
         readinessProbe:
@@ -58,7 +58,7 @@ spec:
         livenessProbe:
             exec:
               command: ["/bin/sh", "-c", "pg_isready -U $POSTGRES_USER -d $POSTGRES_DB"]
-            initialDelaySeconds: 30
+            initialDelaySeconds: 20
             periodSeconds: 20
             timeoutSeconds: 5
             failureThreshold: 5

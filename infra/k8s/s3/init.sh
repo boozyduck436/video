@@ -16,18 +16,18 @@ done
 echo "bucket-storage is up, init setup start"
 
 # create bucket in minio
-mc mb --ignore-existing myminio/scalestream
+mc mb --ignore-existing myminio/streamtube
 
 # create second user
 mc admin user add myminio ${STORAGE_STS_USER} ${STORAGE_STS_PASSWORD}  2> /dev/null || true
 
 # add policy to minio
-mc admin policy create myminio stsuserpolicy /setup/sts-scalestream-readonly-policy.json
+mc admin policy create myminio stsuserpolicy /setup/sts-streamtube-readonly-policy.json
 
 # attach policy to second user
 mc admin policy attach myminio stsuserpolicy --user stsuser
 
 # configure minio for event notfication
-mc event add myminio/scalestream arn:minio:sqs::rabbitmq1:amqp --event put --prefix private/ 2> /dev/null || echo "Event notification already exists(skipping command)"
+mc event add myminio/streamtube arn:minio:sqs::rabbitmq1:amqp --event put --prefix private/ 2> /dev/null || echo "Event notification already exists(skipping command)"
 
 echo "bucket-storage init setup complete"

@@ -41,12 +41,12 @@ spec:
             - name: RABBITMQ_DEFAULT_USER
               valueFrom: 
                 secretKeyRef:
-                  name: scalestream-secrets
+                  name: streamtube-secrets
                   key: RABBITMQ_DEFAULT_USER
             - name: RABBITMQ_DEFAULT_PASS
               valueFrom:
                 secretKeyRef:
-                  name: scalestream-secrets
+                  name: streamtube-secrets
                   key: RABBITMQ_DEFAULT_PASS
           resources:
             requests:
@@ -58,14 +58,14 @@ spec:
           readinessProbe:
             exec:
               command: ["rabbitmq-diagnostics", "-q", "ping"]
-            initialDelaySeconds: 15
+            initialDelaySeconds: 10
             periodSeconds: 10
             timeoutSeconds: 5
             failureThreshold: 3
           livenessProbe:
             exec:
               command: ["rabbitmq-diagnostics", "-q", "ping"]
-            initialDelaySeconds: 30
+            initialDelaySeconds: 20
             periodSeconds: 15
             timeoutSeconds: 5
             failureThreshold: 5
@@ -100,22 +100,22 @@ spec:
             - name: RABBITMQ_DEFAULT_USER
               valueFrom: 
                 secretKeyRef:
-                  name: scalestream-secrets
+                  name: streamtube-secrets
                   key: RABBITMQ_DEFAULT_USER
             - name: RABBITMQ_DEFAULT_PASS
               valueFrom:
                 secretKeyRef:
-                  name: scalestream-secrets
+                  name: streamtube-secrets
                   key: RABBITMQ_DEFAULT_PASS
             - name: RABBITMQ_HOST
               valueFrom:
                 secretKeyRef:
-                  name: scalestream-secrets
+                  name: streamtube-secrets
                   key: RABBITMQ_HOST
             - name: RABBITMQ_MANAGEMENT_PORT
               valueFrom:
                 secretKeyRef:
-                  name: scalestream-secrets
+                  name: streamtube-secrets
                   key: RABBITMQ_MANAGEMENT_PORT
             
         volumeMounts:

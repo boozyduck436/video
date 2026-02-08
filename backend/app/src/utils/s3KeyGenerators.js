@@ -1,6 +1,6 @@
 import dotenv from 'dotenv';
 import { getExtensionFromMime } from './mime.js';
-dotenv.config({ path: './.env' })
+dotenv.config({ path: './.env',quiet: true })
 
 
 

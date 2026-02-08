@@ -8,7 +8,7 @@ import { fetchOneRabbitmqMessage, sendRabbitmqAck } from "./service/rabbitmq.ser
 import { removeBucketName } from "./utils/removeBucketName.js";
 import { fileTypeFromFile } from 'file-type';
 
-dotenv.config();
+dotenv.config({ quiet: true });
 
 
 (async () => {

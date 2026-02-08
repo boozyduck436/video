@@ -5,10 +5,11 @@ import {ApiResponse} from "../utils/ApiResponse.js"
 import {asyncHandler} from "../utils/asyncHandler.js"
 import { generateThumbnailKey, generateTempVideoKey, generateUrl } from "../utils/s3KeyGenerators.js"
 import { deleteByPrefixOnS3, generatePresignedUploadUrl } from "../services/s3.service.js"
+import validator from 'validator';
 
 
 const getAllVideos = asyncHandler(async (req, res) => {
-    //TODO: get all videos based on query, sort, pagination
+    // get all videos based on query, sort, pagination
     //it can use default feed and search and also search inside channel
 
     const {query,channelId, sortBy="createdAt", sortType="desc", page = 1, limit = 10 } = req.query
@@ -55,12 +56,20 @@ const getAllVideos = asyncHandler(async (req, res) => {
 })
 
 const publishAVideo = asyncHandler(async (req, res) => {
-    // TODO: get video, upload to cloudinary, create video
     const owner=req.user._id
-    const {title, description,isPublished,videoFileType,thumbnailFileType} = req.body
-
-
-    if(!title || !description || !videoFileType || !thumbnailFileType || !isPublished){
+    const {
+        title,
+        description,
+        isPublished,
+        videoContentType,
+        videoContentLength,
+        videoChecksumSHA256,
+        thumbnailContentType,
+        thumbnailContentLength,
+        thumbnailChecksumSHA256
+    } = req.body
+   
+    if(!title || !description || !videoContentType || !videoContentLength || !videoChecksumSHA256 || !thumbnailContentLength || !thumbnailChecksumSHA256 || !thumbnailContentType || !isPublished){
         throw new ApiError(400,"required data is missing, fill required information")
     }
 
@@ -75,15 +84,22 @@ const publishAVideo = asyncHandler(async (req, res) => {
         }
     )
     
-    const allowedThumbnailType=["image/jpeg","image/png"]
+    const allowedThumbnailContentType=["image/jpeg","image/png"]
 
-    if(!allowedThumbnailType.includes(thumbnailFileType)){
+    if(!allowedThumbnailContentType.includes(thumbnailContentType)){
         throw new ApiError(400, "unsupported image format")
     }
     
+    const THUMBNAIL_MAX_IMAGE_SIZE = 10 * 1024 * 1024; // 10MB
+    if (thumbnailContentLength > THUMBNAIL_MAX_IMAGE_SIZE) {
+        throw new ApiError(400, "thumbnail should not be more than 10MB");
+    }
 
+    if (!validator.isHash(thumbnailChecksumSHA256, 'sha256')) {
+        throw new ApiError(400, "Invalid Thumbnail SHA256 checksum");
+    }
 
-    const allowedVideoTypes = [
+    const allowedVideoContentTypes = [
         "video/mp4",
         "video/webm",
         "video/ogg",
@@ -96,23 +112,30 @@ const publishAVideo = asyncHandler(async (req, res) => {
         "video/3gpp2",
         "video/x-flv"
     ];
-
-    if (!allowedVideoTypes.includes(videoFileType)){
+    if (!allowedVideoContentTypes.includes(videoContentType)){
         throw new ApiError(400, "unsupported video format")
-
     }
 
-    const thumbnailKey=generateThumbnailKey(owner,video._id,thumbnailFileType)
+    const VIDEO_MAX_IMAGE_SIZE = 5 * 1024 * 1024 * 1024; // 5GB
+    if (videoContentLength > VIDEO_MAX_IMAGE_SIZE) {
+        throw new ApiError(400, "VIDEO image should not be more than 10MB");
+    }
+
+    if (!validator.isHash(videoChecksumSHA256, 'sha256')) {
+        throw new ApiError(400, "Invalid Video SHA256 checksum");
+    }
+
+    const thumbnailKey=generateThumbnailKey(owner,video._id,thumbnailContentType)
     const thumbnailUrl=generateUrl(thumbnailKey)
-    const thumbnailUploadUrl= await generatePresignedUploadUrl(thumbnailFileType,thumbnailKey)
+    const thumbnailUploadUrl= await generatePresignedUploadUrl(thumbnailContentType,thumbnailContentLength,thumbnailChecksumSHA256,thumbnailKey)
     if(!thumbnailUploadUrl){
         throw new ApiError(500,"something went wrong, thumbnail upload presigned url is not generated")
     }
 
     
-    const videoKey= generateTempVideoKey(owner,video._id,videoFileType)
+    const videoKey= generateTempVideoKey(owner,video._id,videoContentType)
     const videoUrl= generateUrl(videoKey)
-    const videoUploadUrl= await generatePresignedUploadUrl(videoFileType,videoKey)
+    const videoUploadUrl= await generatePresignedUploadUrl(videoContentType,videoContentLength,videoChecksumSHA256,videoKey)
 
     if(!videoUploadUrl){
         throw new ApiError(500,"something went wrong, video upload presigned url is not genreated ")
@@ -155,10 +178,10 @@ const getVideoById = asyncHandler(async (req, res) => {
 })
 
 const updateVideo = asyncHandler(async (req, res) => {
-    //TODO: update video details like title, description, thumbnail  
+    //update video details like title, description, thumbnail  
     const owner = req.user?._id  
     const { videoId } = req.params
-    const {title,description,isPublished,thumbnailFileType,/*view*/}=req.body
+    const {title,description,isPublished,thumbnailContentType,thumbnailContentLength,thumbnailChecksumSHA256,/*view*/}=req.body
 
     if(!mongoose.Types.ObjectId.isValid(videoId)){
         throw new ApiError(400,"malformed request, invalid userid")
@@ -174,15 +197,24 @@ const updateVideo = asyncHandler(async (req, res) => {
     //if(view)updateFields.view=view // updating views for testing purpose only
 
     let thumbnailUploadUrl
-    if(thumbnailFileType){
+    if(thumbnailContentType){
 
-        if(thumbnailFileType!="image/jpeg" && thumbnailFileType!="image/png"){
+        if(thumbnailContentType!="image/jpeg" && thumbnailContentType!="image/png"){
             throw new ApiError(400, "wrong content type, only image is supported")
+        }
+
+        const THUMBNAIL_MAX_IMAGE_SIZE = 10 * 1024 * 1024; // 10MB
+        if (thumbnailContentLength > THUMBNAIL_MAX_IMAGE_SIZE) {
+            throw new ApiError(400, "thumbnail should not be more than 10MB");
+        }
+
+        if (!validator.isHash(videoChecksumSHA256, 'sha256')) {
+            throw new ApiError(400, "Invalid Thumbnail SHA256 checksum");
         }
 
         const thumbnailKey=generateThumbnailKey(owner,video.title)
         const thumbnailUrl=generateUrl(thumbnailKey)
-        thumbnailUploadUrl= await generatePresignedUploadUrl(thumbnailFileType,thumbnailKey)
+        thumbnailUploadUrl= await generatePresignedUploadUrl(thumbnailContentType,thumbnailContentLength,thumbnailChecksumSHA256,thumbnailKey)
         if(!thumbnailUploadUrl){
             throw new ApiError(500,"something went wrong, thumbnail upload presigned url is not generated")
         }

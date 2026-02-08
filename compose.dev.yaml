@@ -23,7 +23,7 @@ services:
         start_period: 10s
 
       networks:
-        - scalestream-dev
+        - streamtube-dev
       user: 1000:1000
 
     video-transcoder-worker-dev:
@@ -42,7 +42,7 @@ services:
       stdin_open: true
       tty: true
       networks:
-        - scalestream-dev
+        - streamtube-dev
       # DEV ONLY: Simulate KEDA behavior.
       # In Production (K8s), KEDA triggers this container only when messages exist.
       # In Docker Compose, KEDA is absent, so we use this loop to keep the 
@@ -71,7 +71,7 @@ services:
       ports:
         - 127.0.0.1:27017:27017
       networks:
-          - scalestream-dev
+          - streamtube-dev
       volumes:
         - mongodb-dev-data:/data/db
       healthcheck:
@@ -91,7 +91,7 @@ services:
       ports:
         - "127.0.0.1:5432:5432"
       networks:
-          - scalestream-dev
+          - streamtube-dev
       volumes:
         - pg-dev-data:/var/lib/postgresql
       healthcheck:
@@ -107,7 +107,7 @@ services:
         PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL}
         PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD}
       networks:
-        - scalestream-dev
+        - streamtube-dev
       ports:
         - "127.0.0.1:5050:80"
       depends_on:
@@ -136,7 +136,7 @@ services:
         - 127.0.0.1:9000:9000  # HTTP port for MinIO
         - 127.0.0.1:9001:9001  # Port for MinIO Web UI (optional)
       networks:
-          - scalestream-dev
+          - streamtube-dev
       volumes:
         - minio-dev-data:/data
       command: server /data --console-address ":9001"
@@ -160,9 +160,9 @@ services:
         STORAGE_ENDPOINT: ${STORAGE_ENDPOINT}
       volumes:
         - ./infra/k8s/s3/init.sh/:/setup/init.sh
-        - ./infra/k8s/s3/sts-scalestream-readonly-policy.json:/setup/sts-scalestream-readonly-policy.json    
+        - ./infra/k8s/s3/sts-streamtube-readonly-policy.json:/setup/sts-streamtube-readonly-policy.json    
       networks:
-        - scalestream-dev
+        - streamtube-dev
       entrypoint: ["/bin/sh", "/setup/init.sh"]
   
       
@@ -177,7 +177,7 @@ services:
           - 127.0.0.1:5672:5672
           - 127.0.0.1:15672:15672
         networks:
-          - scalestream-dev
+          - streamtube-dev
         healthcheck:
           test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
           interval: 5s
@@ -188,7 +188,7 @@ services:
     rabbitmq-init:
         image: rabbitmq:4-management
         networks:
-          - scalestream-dev
+          - streamtube-dev
         depends_on:
           rabbitmq:
             condition: service_healthy
@@ -209,4 +209,4 @@ volumes:
   rabbitmq-dev-data:
 
 networks:
-  scalestream-dev:
+  streamtube-dev:

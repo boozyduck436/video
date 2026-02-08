@@ -5,7 +5,7 @@ import { pipeline } from "stream/promises";
 import dotenv from "dotenv";
 import { s3 } from "../config/s3.config.js";
 
-dotenv.config();
+dotenv.config({ quiet: true });
 
 
 
@@ -35,5 +35,3 @@ export async function uploadDirectoryToS3(localDir, s3Prefix) {
   }
   console.log("All files uploaded to S3.");
 }
-
-//await downloadFromS3("private/users/693981e6e2c24e15cff00e15/69398df1cd1251e7a5c7eade/tempVideo.mp4","./temp/input.mp4")

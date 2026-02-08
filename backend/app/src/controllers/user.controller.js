@@ -7,22 +7,13 @@ import mongoose from "mongoose";
 import { deleteByPrefixOnS3, generatePresignedUploadUrl, stsOnS3 } from "../services/s3.service.js";
 import { generateUserProfileImageKey,generateUserCoverImageKey, generateUrl,  } from "../utils/s3KeyGenerators.js";
 import prisma from "../config/postgres.config.js";
-import { console } from "inspector";
-
+import validator from 'validator';
 
 
 const cookieOptions={
     httpOnly: true,
     secure: true
 }
-
-const generateStsCredentials=asyncHandler(async (req,res) => {
-    const response= await stsOnS3()
-
-    res
-    .status(200)
-    .json(new ApiResponse(200,{response},"sts credentials generated succesfully"))
-})
 
 const generateAccessAndRefreshToken=async(userId)=>{
     try {
@@ -47,10 +38,21 @@ const generateAccessAndRefreshToken=async(userId)=>{
 const regsiterUser=asyncHandler(async(req,res)=>{
     
     // get user detail from frontend 
-    const {username,email,fullName,password,profileFileType,coverFileType}=req.body
+    const {
+        username,
+        email,
+        fullName,
+        password,
+        avatarContentType,
+        avatarContentLength,
+        avatarChecksumSHA256,
+        coverContentType,
+        coverContentLength,
+        coverChecksumSHA256
+    }=req.body
 
     //validation - not empty
-    if([username,email,fullName,password,profileFileType].some((field)=>field?.trim()==="")){ 
+    if([username,email,fullName,password,avatarContentType,avatarContentLength,avatarChecksumSHA256].some((field)=>field?.trim()==="")){ 
         // field is just use to pass argument you can use any other name
         throw new ApiError(400,"required data is missing, fill required information")
     }
@@ -64,15 +66,38 @@ const regsiterUser=asyncHandler(async(req,res)=>{
         throw new ApiError(400,"@ is required is email")
     }
 
-    if(profileFileType!="image/jpeg" && profileFileType!="image/png"){
+    if(avatarContentType!="image/jpeg" && avatarContentType!="image/png"){
         throw new ApiError(400, "wrong content type, only jpeg and png are allowed")
     }
 
+    const AVATAR_MAX_IMAGE_SIZE = 10 * 1024 * 1024; // 10MB
 
-    if(coverFileType!="image/jpeg" && coverFileType!="image/png" && coverFileType!= " "){
-        throw new ApiError(400, "wrong content type, only jpeg and png are allowed")
+    if (avatarContentLength > AVATAR_MAX_IMAGE_SIZE) {
+        throw new ApiError(400, "Avatar image should not be more than 10MB");
     }
+
+    if (!validator.isHash(avatarChecksumSHA256, 'sha256')) {
+        throw new ApiError(400, "Invalid Avatar SHA256 checksum");
+    }
+
+
+    if(coverContentLength){// any cover field can used as condtion , just want to check if user want to upload cover image?
         
+        if(coverContentType!="image/jpeg" && coverContentType!="image/png" && coverContentType!= " "){
+            throw new ApiError(400, "wrong content type, only jpeg and png are allowed")
+        }
+
+        const COVER_MAX_IMAGE_SIZE = 10 * 1024 * 1024; // 10MB
+
+        if (coverContentLength && coverContentLength > COVER_MAX_IMAGE_SIZE) { 
+            throw new ApiError(400, "cover image should not be more than 10MB");
+        }
+
+        if (!validator.isHash(coverChecksumSHA256, 'sha256')) {
+            throw new ApiError(400, "Invalid Cover Image SHA256 checksum");
+        }
+
+    }
 
 
     //check if user is alredy exist based on username or email
@@ -100,9 +125,10 @@ const regsiterUser=asyncHandler(async(req,res)=>{
         throw new ApiError(500,"something went wrong, user is not registred")
     }
 
-    const avatarKey= generateUserProfileImageKey(user._id,profileFileType)
+    const avatarKey= generateUserProfileImageKey(user._id,avatarContentType)
     const avatarUrl= generateUrl(avatarKey)
-    const avatarUploadUrl = await generatePresignedUploadUrl(profileFileType,avatarKey)
+    console.log(avatarContentType)
+    const avatarUploadUrl = await generatePresignedUploadUrl(avatarContentType,avatarContentLength,avatarChecksumSHA256,avatarKey)
     
     if(!avatarUploadUrl){
         throw new ApiError(500, "something went wrong , avatar presigned url is not genrated")
@@ -112,9 +138,9 @@ const regsiterUser=asyncHandler(async(req,res)=>{
     
 
     let coverUploadUrl,coverKey,coverUrl;
-    if(coverFileType!= " "){
-        coverKey= generateUserCoverImageKey(user._id,coverFileType)
-        coverUploadUrl= await generatePresignedUploadUrl(coverFileType,coverKey)
+    if(coverContentType!= " "){
+        coverKey= generateUserCoverImageKey(user._id,coverContentType)
+        coverUploadUrl= await generatePresignedUploadUrl(coverContentType,coverContentLength,coverChecksumSHA256,coverKey)
         coverUrl= generateUrl(coverKey)
         if(!coverUploadUrl){
             throw new ApiError(500, "something went wrong, coverimage is not upload")
@@ -203,12 +229,14 @@ const loginUser=asyncHandler(async (req,res)=>{
         }
     )
 
+    const StsCredentials= await stsOnS3()
+
     const response={
         ...loggedInUser._doc,
         balance: userBalance.balance,
         accessToken,
-        refreshToken
-        
+        refreshToken,
+        StsCredentials
     }
     
     //send res with cokkie
@@ -216,6 +244,7 @@ const loginUser=asyncHandler(async (req,res)=>{
     .status(200)
     .cookie("accessToken",accessToken,cookieOptions)
     .cookie("refreshToken",refreshToken,cookieOptions)
+    .cookie("StsCredentials",StsCredentials,cookieOptions)
     .json(new ApiResponse(200,{response},"User logged in successfully"))
 
 
@@ -234,6 +263,7 @@ const logoutUser=asyncHandler(async(req,res)=>{
     .status(200)
     .clearCookie("accessToken",cookieOptions)
     .clearCookie("refreshToken",cookieOptions)
+    .clearCookie("StsCredentials",cookieOptions)
     .json(new ApiResponse(200,{},"user logged out "))
 })
 
@@ -282,6 +312,15 @@ const refreshToken=asyncHandler(async(req,res)=>{
     
 
 
+})
+
+const generateStsCredentials=asyncHandler(async (req,res) => {
+    const StsCredentials= await stsOnS3()
+
+    res
+    .status(200)
+    .cookie("StsCredentials",StsCredentials,cookieOptions)
+    .json(new ApiResponse(200,{StsCredentials},"sts credentials generated succesfully"))
 })
 
 const changeCurrentPassword=asyncHandler(async(req,res)=>{
@@ -362,16 +401,26 @@ const updateUserDetails=asyncHandler(async(req,res)=>{
 
 const updateUserAvatar=asyncHandler(async(req,res)=>{
     
-    const {profileFileType}=req.body
+    const {avatarContentType,avatarContentLength,avatarChecksumSHA256}=req.body
     const owner= req.user?._id
 
-    if(profileFileType!="image/jpeg" && profileFileType!="image/png"){
+    if(avatarContentType!="image/jpeg" && avatarContentType!="image/png"){
         throw new ApiError(400, "wrong content type, only jpeg and png are allowed")
     }
 
-    const avatarKey= generateUserProfileImageKey(owner,profileFileType)
+    const AVATAR_MAX_IMAGE_SIZE = 10 * 1024 * 1024; // 10MB
+
+    if (avatarContentLength > AVATAR_MAX_IMAGE_SIZE) {
+        throw new ApiError(400, "Avatar image should not be more than 10MB");
+    }
+
+    if (!validator.isHash(avatarChecksumSHA256, 'sha256')) {
+        throw new ApiError(400, "Invalid Avatar SHA256 checksum");
+    }
+
+    const avatarKey= generateUserProfileImageKey(owner,avatarContentType)
     
-    const avatarUploadUrl = await generatePresignedUploadUrl(profileFileType,avatarKey)
+    const avatarUploadUrl = await generatePresignedUploadUrl(avatarContentType,avatarContentLength,avatarChecksumSHA256,avatarKey)
     
     const avatarUrl= generateUrl(avatarKey)
     
@@ -401,15 +450,28 @@ const updateUserAvatar=asyncHandler(async(req,res)=>{
 
 const updateUserCoverImage=asyncHandler(async(req,res)=>{
     
-    const {coverFileType}=req.body
+    const {coverContentType,coverContentLength,coverChecksumSHA256}=req.body
     const owner= req?.user?._id
 
-        const coverKey= generateUserCoverImageKey(owner,coverFileType)
-        const coverUploadUrl= await generatePresignedUploadUrl(coverFileType,coverKey)
-        const coverUrl= generateUrl(coverKey)
-        if(!coverUploadUrl){
-            throw new ApiError(500, "something went wrong, coverimage is not upload")
-        }
+    if(coverContentType!="image/jpeg" && coverContentType!="image/png" && coverContentType!= " "){
+        throw new ApiError(400, "wrong content type, only jpeg and png are allowed")
+    }
+
+    const COVER_MAX_IMAGE_SIZE = 10 * 1024 * 1024; // 10MB
+    if (coverContentLength && coverContentLength > COVER_MAX_IMAGE_SIZE) { 
+        throw new ApiError(400, "cover image should not be more than 10MB");
+    }
+
+    if (!validator.isHash(coverChecksumSHA256, 'sha256')) {
+        throw new ApiError(400, "Invalid Cover Image SHA256 checksum");
+    }
+
+    const coverKey= generateUserCoverImageKey(owner,coverContentType)
+    const coverUploadUrl= await generatePresignedUploadUrl(coverContentType,coverContentLength,coverChecksumSHA256,coverKey)
+    const coverUrl= generateUrl(coverKey)
+    if(!coverUploadUrl){
+        throw new ApiError(500, "something went wrong, coverimage is not upload")
+    }
 
 
 

@@ -4,17 +4,17 @@
     {
       "Effect": "Deny",
       "Action": "s3:*",
-      "Resource": "arn:aws:s3:::scalestream/private/*"
+      "Resource": "arn:aws:s3:::streamtube/private/*"
     },
     {
       "Effect": "Allow",
       "Action": "s3:GetObject",
-      "Resource": "arn:aws:s3:::scalestream/users/*"
+      "Resource": "arn:aws:s3:::streamtube/users/*"
     },
     {
       "Effect": "Allow",
       "Action": "s3:ListBucket",
-      "Resource": "arn:aws:s3:::scalestream",
+      "Resource": "arn:aws:s3:::streamtube",
       "Condition": {
         "StringLike": {
           "s3:prefix": "users/*"
@@ -24,7 +24,7 @@
     {
       "Effect": "Allow",
       "Action": "s3:GetBucketLocation",
-      "Resource": "arn:aws:s3:::scalestream"
+      "Resource": "arn:aws:s3:::streamtube"
     }
   ]
 }

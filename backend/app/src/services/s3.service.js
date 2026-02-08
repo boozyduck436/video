@@ -3,9 +3,7 @@ import { PutObjectCommand, GetObjectCommand, DeleteObjectCommand, ListObjectsV2C
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import fs from 'fs';
 import { ApiError } from '../utils/ApiError.js';
-import { ApiResponse } from '../utils/ApiResponse.js';
 import { AssumeRoleCommand } from '@aws-sdk/client-sts';
-
 
 
 const uploadObjectOnS3= async function (file,Key) {// uploding local file to s3 without using presigned url
@@ -47,15 +45,24 @@ const generatePresignedDownloadUrl= async function (Key,time="300") {
 
 }
 
-const generatePresignedUploadUrl= async function(ContentType,Key, time="300"){
+const generatePresignedUploadUrl= async function(ContentType,ContentLength,ChecksumSHA256,Key, time="300"){
   try {
+    console.log("Content-Type being signed:", ContentType);
         const command = new PutObjectCommand({
             Bucket: process.env.STORAGE_BUCKET,
             Key: Key,
             ContentType: ContentType,
+            ContentLength: ContentLength,
+            ChecksumSHA256: ChecksumSHA256, // use Base64
+            ChecksumAlgorithm: "SHA256",
           });
         
-        let uploadUrl= await getSignedUrl(s3PresignClient,command,{expiresIn: time})
+        let uploadUrl= await getSignedUrl(s3PresignClient,command,{
+            expiresIn: time,
+            signableHeaders: new Set(["content-type", "content-length", "host"])
+          })
+
+
         return uploadUrl
         
   } catch (error) {

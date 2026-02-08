@@ -1,9 +1,9 @@
 apiVersion: keda.sh/v1alpha1
 kind: ScaledJob
 metadata:
-  name: scalestream-video-transcoder
+  name: streamtube-video-transcoder
   labels:
-    part-of: scalestream
+    part-of: streamtube
     component: worker
 spec:
   pollingInterval: 2  #sec         
@@ -27,13 +27,13 @@ spec:
     template:
       metadata:
         labels:
-          part-of: scalestream
+          part-of: streamtube
           component: worker     
       spec:
         restartPolicy: Never
         containers:
-          - name: scalestream-video-transcoder
-            image: scalestream-video-transcoder
+          - name: streamtube-video-transcoder
+            image: streamtube-video-transcoder
             imagePullPolicy: Never 
             resources:
               requests:
@@ -44,4 +44,4 @@ spec:
                 cpu: "2000m"
             envFrom:
               - secretRef:
-                  name: scalestream-secrets
+                  name: streamtube-secrets

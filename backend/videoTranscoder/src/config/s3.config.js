@@ -1,6 +1,6 @@
 import { S3Client } from "@aws-sdk/client-s3";
 import dotenv from 'dotenv';
-dotenv.config({ path: '.env' })
+dotenv.config({ path: '.env', quiet: true })
 
 // AWS S3 or minIO
 const {
@@ -10,8 +10,6 @@ const {
     STORAGE_SECRET_KEY,
     STORAGE_FORCE_PATH_STYLE,
   } = process.env;
-
-  console.log(STORAGE_ENDPOINT)
   
   export const s3 = new S3Client({
     region: STORAGE_REGION,
