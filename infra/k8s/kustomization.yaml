@@ -17,12 +17,12 @@ configMapGenerator:
   - name: minio-setup-files
     files:
       - s3/init.sh
-      - s3/sts-streamtube-readonly-policy.json
+      - s3/sts-scalestream-readonly-policy.json
 
 secretGenerator:
-  - name: streamtube-secrets
+  - name: scalestream-secrets
     envs:
       - .env.k8s
     type: Opaque
-    options: 
+    options:
       disableNameSuffixHash: true # because keda can't handle random suffix

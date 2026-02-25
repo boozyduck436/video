@@ -4,8 +4,8 @@ metadata:
   name: postgres
 spec:
   ports:
-  - port: 5432
-    name: postgres
+    - port: 5432
+      name: postgres
   clusterIP: None
   selector:
     app: postgres
@@ -15,7 +15,7 @@ kind: StatefulSet
 metadata:
   name: postgres
 spec:
-  serviceName: "postgres"
+  serviceName: 'postgres'
   replicas: 1
   selector:
     matchLabels:
@@ -26,51 +26,51 @@ spec:
         app: postgres
     spec:
       containers:
-      - name: postgres
-        image: postgres:18
-        ports:
-        - containerPort: 5432
-        env:
-        - name: POSTGRES_USER
-          valueFrom:
-            secretKeyRef:
-              name: streamtube-secrets
-              key: PGUSER
-        - name: POSTGRES_DB
-          valueFrom:
-            secretKeyRef:
-              name: streamtube-secrets
-              key: PGDATABASE
-        - name: POSTGRES_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              name: streamtube-secrets
-              key: PGPASSWORD
+        - name: postgres
+          image: postgres:18.1
+          ports:
+            - containerPort: 5432
+          env:
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: scalestream-secrets
+                  key: PGUSER
+            - name: POSTGRES_DB
+              valueFrom:
+                secretKeyRef:
+                  name: scalestream-secrets
+                  key: PGDATABASE
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: scalestream-secrets
+                  key: PGPASSWORD
 
-        readinessProbe:
+          readinessProbe:
             exec:
-              command: ["/bin/sh", "-c", "pg_isready -U $POSTGRES_USER -d $POSTGRES_DB"]
+              command: ['/bin/sh', '-c', 'pg_isready -U $POSTGRES_USER -d $POSTGRES_DB']
             initialDelaySeconds: 10
             periodSeconds: 10
             timeoutSeconds: 5
             failureThreshold: 3
 
-        livenessProbe:
+          livenessProbe:
             exec:
-              command: ["/bin/sh", "-c", "pg_isready -U $POSTGRES_USER -d $POSTGRES_DB"]
+              command: ['/bin/sh', '-c', 'pg_isready -U $POSTGRES_USER -d $POSTGRES_DB']
             initialDelaySeconds: 20
             periodSeconds: 20
             timeoutSeconds: 5
             failureThreshold: 5
 
-        volumeMounts:
-        - name: postgres-data
-          mountPath: /var/lib/postgresql
+          volumeMounts:
+            - name: postgres-data
+              mountPath: /var/lib/postgresql
   volumeClaimTemplates:
-  - metadata:
-      name: postgres-data
-    spec:
-      accessModes: [ "ReadWriteOnce" ]
-      resources:
-        requests:
-          storage: 1Gi
+    - metadata:
+        name: postgres-data
+      spec:
+        accessModes: ['ReadWriteOnce']
+        resources:
+          requests:
+            storage: 1Gi

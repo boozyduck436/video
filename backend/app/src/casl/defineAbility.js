@@ -1,4 +1,4 @@
-import { AbilityBuilder, createMongoAbility } from "@casl/ability";
+import { AbilityBuilder, createMongoAbility } from '@casl/ability'
 
 /*
   Policy:
@@ -7,48 +7,46 @@ import { AbilityBuilder, createMongoAbility } from "@casl/ability";
   unknown role=> NO permissions
 */
 export function defineAbilityFor(user) {
-  const { can, build } = new AbilityBuilder(createMongoAbility);
+  const { can, build } = new AbilityBuilder(createMongoAbility)
 
-  const role = user?.role; 
+  const role = user?.role
 
   // Admin policy
-  if (role === "admin") {
-    can("manage", "all");
+  if (role === 'admin') {
+    can('manage', 'all')
     return build({
       detectSubjectType: (item) => item.__caslSubjectType__,
-    });
+    })
   }
 
   // User policy
-  if (role === "user") {
-    
+  if (role === 'user') {
     // user can read any
-    can("read", "all");
+    can('read', 'all')
 
     // Models where ownership field is "owner"
-    const subjects = ["Video", "Tweet", "Playlist", "Comment"];
+    const subjects = ['Video', 'Tweet', 'Playlist', 'Comment']
 
     for (const subject of subjects) {
-    can("create", subject);
-    can(["update", "delete"], subject, { owner: user._id });
+      can('create', subject)
+      can(['update', 'delete'], subject, { owner: user._id })
     }
 
-
     // Like model (ownership field is "likedBy")
-    can("create", "Like");
-    can("delete", "Like", { likedBy: user._id });
+    can('create', 'Like')
+    can('delete', 'Like', { likedBy: user._id })
 
     // Subscription model (ownership field is "subscriber")
-    can("create", "Subscription");
-    can("delete", "Subscription", { subscriber: user._id });
+    can('create', 'Subscription')
+    can('delete', 'Subscription', { subscriber: user._id })
 
     return build({
       detectSubjectType: (item) => item.__caslSubjectType__,
-    });
+    })
   }
 
   // Unknown role => no permissions at all
   return build({
     detectSubjectType: (item) => item.__caslSubjectType__,
-  });
+  })
 }

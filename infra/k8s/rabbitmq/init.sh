@@ -5,7 +5,7 @@ CMD="rabbitmqadmin -H $RABBITMQ_HOST -P $RABBITMQ_MANAGEMENT_PORT  -u $RABBITMQ_
 
 # > /dev/null : Sends success output to trash
 # 2>&1 : Sends errors to trash too
-# slient waiting loop
+# silent waiting loop
 while ! $CMD list queues > /dev/null 2>&1; do
   echo "RabbitMQ not connected. Retrying in 2s"
   sleep 2

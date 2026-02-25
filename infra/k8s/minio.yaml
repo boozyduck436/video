@@ -20,7 +20,7 @@ kind: StatefulSet
 metadata:
   name: minio
 spec:
-  serviceName: "minio"
+  serviceName: 'minio'
   replicas: 1
   selector:
     matchLabels:
@@ -41,47 +41,47 @@ spec:
             - name: MINIO_ROOT_USER
               valueFrom:
                 secretKeyRef:
-                  name: streamtube-secrets
+                  name: scalestream-secrets
                   key: STORAGE_ACCESS_KEY
             - name: MINIO_ROOT_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: streamtube-secrets
+                  name: scalestream-secrets
                   key: STORAGE_SECRET_KEY
             - name: MINIO_NOTIFY_AMQP_ENABLE_rabbitmq1
               valueFrom:
                 secretKeyRef:
-                  name: streamtube-secrets
+                  name: scalestream-secrets
                   key: MINIO_NOTIFY_AMQP_ENABLE_rabbitmq1
             - name: MINIO_NOTIFY_AMQP_URL_rabbitmq1
               valueFrom:
                 secretKeyRef:
-                  name: streamtube-secrets
+                  name: scalestream-secrets
                   key: MINIO_NOTIFY_AMQP_URL_rabbitmq1
             - name: MINIO_NOTIFY_AMQP_EXCHANGE_rabbitmq1
               valueFrom:
                 secretKeyRef:
-                  name: streamtube-secrets
+                  name: scalestream-secrets
                   key: MINIO_NOTIFY_AMQP_EXCHANGE_rabbitmq1
             - name: MINIO_NOTIFY_AMQP_EXCHANGE_TYPE_rabbitmq1
               valueFrom:
                 secretKeyRef:
-                  name: streamtube-secrets
+                  name: scalestream-secrets
                   key: MINIO_NOTIFY_AMQP_EXCHANGE_TYPE_rabbitmq1
             - name: MINIO_NOTIFY_AMQP_ROUTING_KEY_rabbitmq1
               valueFrom:
                 secretKeyRef:
-                  name: streamtube-secrets
+                  name: scalestream-secrets
                   key: MINIO_NOTIFY_AMQP_ROUTING_KEY_rabbitmq1
             - name: MINIO_NOTIFY_AMQP_DURABLE_rabbitmq1
               valueFrom:
                 secretKeyRef:
-                  name: streamtube-secrets
+                  name: scalestream-secrets
                   key: MINIO_NOTIFY_AMQP_DURABLE_rabbitmq1
             - name: MINIO_NOTIFY_AMQP_DELIVERY_MODE_rabbitmq1
               valueFrom:
                 secretKeyRef:
-                  name: streamtube-secrets
+                  name: scalestream-secrets
                   key: MINIO_NOTIFY_AMQP_DELIVERY_MODE_rabbitmq1
 
           ports:
@@ -95,7 +95,7 @@ spec:
             initialDelaySeconds: 10
             periodSeconds: 10
             failureThreshold: 3
-            
+
           livenessProbe:
             httpGet:
               path: /minio/health/live
@@ -111,7 +111,7 @@ spec:
     - metadata:
         name: minio-data
       spec:
-        accessModes: ["ReadWriteOnce"]
+        accessModes: ['ReadWriteOnce']
         resources:
           requests:
             storage: 5Gi
@@ -129,32 +129,32 @@ spec:
       containers:
         - name: minio-init
           image: minio/mc:latest
-          command: ["/bin/sh", "/setup/init.sh"]
+          command: ['/bin/sh', '/setup/init.sh']
           env:
             - name: MINIO_ROOT_USER
               valueFrom:
                 secretKeyRef:
-                  name: streamtube-secrets
+                  name: scalestream-secrets
                   key: STORAGE_ACCESS_KEY
             - name: MINIO_ROOT_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: streamtube-secrets
+                  name: scalestream-secrets
                   key: STORAGE_SECRET_KEY
             - name: STORAGE_STS_USER
               valueFrom:
                 secretKeyRef:
-                  name: streamtube-secrets
+                  name: scalestream-secrets
                   key: STORAGE_STS_USER
             - name: STORAGE_STS_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: streamtube-secrets
+                  name: scalestream-secrets
                   key: STORAGE_STS_PASSWORD
             - name: STORAGE_ENDPOINT
               valueFrom:
                 secretKeyRef:
-                  name: streamtube-secrets
+                  name: scalestream-secrets
                   key: STORAGE_ENDPOINT
           volumeMounts:
             - name: setup-files

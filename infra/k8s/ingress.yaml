@@ -1,22 +1,24 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: streamtube-ingress
+  name: scalestream-ingress
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-body-size: '50g'
 spec:
   ingressClassName: nginx
   rules:
-    - host: app.streamtube.local
+    - host: app.scalestream.local
       http:
         paths:
           - path: /
             pathType: Prefix
             backend:
               service:
-                name: streamtube-app
+                name: scalestream-app
                 port:
                   number: 8001
 
-    - host: minio.streamtube.local
+    - host: minio.scalestream.local
       http:
         paths:
           - path: /
@@ -27,7 +29,7 @@ spec:
                 port:
                   number: 9000
 
-    - host: minio-console.streamtube.local
+    - host: minio-console.scalestream.local
       http:
         paths:
           - path: /
@@ -38,7 +40,7 @@ spec:
                 port:
                   number: 9001
 
-    - host: rabbitmq-console.streamtube.local
+    - host: rabbitmq-console.scalestream.local
       http:
         paths:
           - path: /
@@ -47,4 +49,4 @@ spec:
               service:
                 name: rabbitmq
                 port:
-                  number: 15672 
+                  number: 15672

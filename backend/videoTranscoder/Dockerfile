@@ -1,13 +1,20 @@
-FROM node:trixie-slim
+FROM node:25-trixie-slim
 
 RUN apt update && apt install -y ffmpeg 
 
+ENV CI=true
+
+RUN npm install -g pnpm
+
 WORKDIR /app
 
-COPY package*.json ./
+COPY pnpm-lock.yaml  pnpm-workspace.yaml ./
+COPY backend/videoTranscoder/package.json  backend/videoTranscoder/package.json
 
-RUN npm install --production
+RUN pnpm install --production
 
-COPY . .
+COPY backend/videoTranscoder backend/videoTranscoder
 
-CMD [ "npm","start" ]
+WORKDIR /app/backend/videoTranscoder
+
+CMD ["sh", "-c", "pnpm start"]

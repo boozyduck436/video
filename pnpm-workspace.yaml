@@ -1,0 +1,8 @@
+packages:
+  - backend/app
+  - backend/videoTranscoder
+
+onlyBuiltDependencies:
+  - '@prisma/engines'
+  - bcrypt
+  - prisma

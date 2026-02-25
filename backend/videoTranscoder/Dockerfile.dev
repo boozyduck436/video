@@ -1,7 +1,9 @@
-FROM node:trixie-slim
+FROM node:25
 
 RUN apt update && apt install -y ffmpeg bash && rm -rf /var/lib/apt/lists/*
 
-WORKDIR /app
+RUN npm install -g pnpm
+
+WORKDIR /workspace
 
 CMD ["bash"]

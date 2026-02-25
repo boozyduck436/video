@@ -2,3 +2,6 @@ frontend
 apiTestingCollections
 .env
 infra/k8s/.env.k8s
+.pnpm-store
+node_modules
+.vscode

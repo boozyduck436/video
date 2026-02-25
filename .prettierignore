@@ -1,0 +1,15 @@
+**/.env*
+**/*.log
+**/*.log*
+
+node_modules/
+
+package-lock.json
+pnpm-lock.yaml
+.pnpm-store
+
+tmp/
+generated/
+apiTestingCollections
+README.md
+

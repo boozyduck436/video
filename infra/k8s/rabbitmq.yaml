@@ -13,15 +13,14 @@ spec:
     - port: 15672
       targetPort: 15672
       name: management
-      
----
 
+---
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: rabbitmq
 spec:
-  serviceName: "rabbitmq"
+  serviceName: 'rabbitmq'
   replicas: 1
   selector:
     matchLabels:
@@ -33,38 +32,38 @@ spec:
     spec:
       containers:
         - name: rabbitmq
-          image: rabbitmq:4-management
+          image: rabbitmq:4.2-management
           ports:
             - containerPort: 5672
             - containerPort: 15672
-          env: 
+          env:
             - name: RABBITMQ_DEFAULT_USER
-              valueFrom: 
+              valueFrom:
                 secretKeyRef:
-                  name: streamtube-secrets
+                  name: scalestream-secrets
                   key: RABBITMQ_DEFAULT_USER
             - name: RABBITMQ_DEFAULT_PASS
               valueFrom:
                 secretKeyRef:
-                  name: streamtube-secrets
+                  name: scalestream-secrets
                   key: RABBITMQ_DEFAULT_PASS
           resources:
             requests:
-              memory: "256Mi"
-              cpu: "100m"
+              memory: '256Mi'
+              cpu: '100m'
             limits:
-              memory: "1Gi"
-              cpu: "500m"
+              memory: '1Gi'
+              cpu: '500m'
           readinessProbe:
             exec:
-              command: ["rabbitmq-diagnostics", "-q", "ping"]
+              command: ['rabbitmq-diagnostics', '-q', 'ping']
             initialDelaySeconds: 10
             periodSeconds: 10
             timeoutSeconds: 5
             failureThreshold: 3
           livenessProbe:
             exec:
-              command: ["rabbitmq-diagnostics", "-q", "ping"]
+              command: ['rabbitmq-diagnostics', '-q', 'ping']
             initialDelaySeconds: 20
             periodSeconds: 15
             timeoutSeconds: 5
@@ -76,13 +75,12 @@ spec:
     - metadata:
         name: rabbitmq-data
       spec:
-        accessModes: ["ReadWriteOnce"]
+        accessModes: ['ReadWriteOnce']
         resources:
           requests:
             storage: 2Gi
 
 ---
-
 apiVersion: batch/v1
 kind: Job
 metadata:
@@ -93,40 +91,36 @@ spec:
     spec:
       restartPolicy: OnFailure
       containers:
-      - name: rabbitmq-init
-        image: rabbitmq:4-management
-        command: ["/bin/sh", "/scripts/init.sh"]
-        env: 
+        - name: rabbitmq-init
+          image: rabbitmq:4.2-management
+          command: ['/bin/sh', '/scripts/init.sh']
+          env:
             - name: RABBITMQ_DEFAULT_USER
-              valueFrom: 
+              valueFrom:
                 secretKeyRef:
-                  name: streamtube-secrets
+                  name: scalestream-secrets
                   key: RABBITMQ_DEFAULT_USER
             - name: RABBITMQ_DEFAULT_PASS
               valueFrom:
                 secretKeyRef:
-                  name: streamtube-secrets
+                  name: scalestream-secrets
                   key: RABBITMQ_DEFAULT_PASS
             - name: RABBITMQ_HOST
               valueFrom:
                 secretKeyRef:
-                  name: streamtube-secrets
+                  name: scalestream-secrets
                   key: RABBITMQ_HOST
             - name: RABBITMQ_MANAGEMENT_PORT
               valueFrom:
                 secretKeyRef:
-                  name: streamtube-secrets
+                  name: scalestream-secrets
                   key: RABBITMQ_MANAGEMENT_PORT
-            
-        volumeMounts:
-          - name: rabbitmq-init-volume
-            mountPath: /scripts
+
+          volumeMounts:
+            - name: rabbitmq-init-volume
+              mountPath: /scripts
       volumes:
         - name: rabbitmq-init-volume
           configMap:
             name: rabbitmq-init-script
             defaultMode: 0777
-
-
-            
-

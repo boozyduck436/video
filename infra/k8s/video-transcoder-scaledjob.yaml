@@ -1,15 +1,15 @@
 apiVersion: keda.sh/v1alpha1
 kind: ScaledJob
 metadata:
-  name: streamtube-video-transcoder
+  name: scalestream-video-transcoder
   labels:
-    part-of: streamtube
+    part-of: scalestream
     component: worker
 spec:
-  pollingInterval: 2  #sec         
-  maxReplicaCount: 10  #parallel videos
+  pollingInterval: 2 #sec
+  maxReplicaCount: 10 #parallel videos
   successfulJobsHistoryLimit: 0 # Clean up success immediately
-  failedJobsHistoryLimit: 3  # Keep 3 failures for debugging
+  failedJobsHistoryLimit: 3 # Keep 3 failures for debugging
 
   triggers:
     - type: rabbitmq
@@ -18,7 +18,7 @@ spec:
         hostFromEnv: RABBITMQ_URL
         queueName: s3-events
         mode: QueueLength
-        value: "1"  # 1 message = 1 worker pod
+        value: '1' # 1 message = 1 worker pod
 
   jobTargetRef:
     parallelism: 1
@@ -27,21 +27,21 @@ spec:
     template:
       metadata:
         labels:
-          part-of: streamtube
-          component: worker     
+          part-of: scalestream
+          component: worker
       spec:
         restartPolicy: Never
         containers:
-          - name: streamtube-video-transcoder
-            image: streamtube-video-transcoder
-            imagePullPolicy: Never 
+          - name: scalestream-video-transcoder
+            image: scalestream-video-transcoder
+            imagePullPolicy: Never
             resources:
               requests:
-                memory: "512Mi"  
-                cpu: "500m"
+                memory: '512Mi'
+                cpu: '500m'
               limits:
-                memory: "2Gi"
-                cpu: "2000m"
+                memory: '2Gi'
+                cpu: '2000m'
             envFrom:
               - secretRef:
-                  name: streamtube-secrets
+                  name: scalestream-secrets
