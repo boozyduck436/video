@@ -1,11 +1,11 @@
-import mongoose, { isValidObjectId } from 'mongoose'
+import mongoose from 'mongoose'
 import { Like } from '../models/like.model.js'
 import { ApiError } from '../utils/ApiError.js'
 import { ApiResponse } from '../utils/ApiResponse.js'
 import { asyncHandler } from '../utils/asyncHandler.js'
 
 const createLike = asyncHandler(async (req, res) => {
-  const { mediaType, postId } = req?.params
+  const { mediaType, postId } = req.params
   const likedBy = req?.user._id
 
   if (mediaType !== 'Video' && mediaType !== 'Tweet' && mediaType !== 'Comment') {
@@ -56,8 +56,8 @@ const deleteLike = asyncHandler(async (req, res) => {
 })
 
 const getPostLike = asyncHandler(async (req, res) => {
-  //TODO: is liked by user or not and total like
-  const { mediaType, postId } = req?.params
+  //is liked by user or not and total like
+  const { mediaType, postId } = req.params
   const likedBy = req?.user._id
 
   if (mediaType !== 'Video' && mediaType !== 'Tweet' && mediaType !== 'Comment') {

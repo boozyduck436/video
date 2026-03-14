@@ -1,5 +1,4 @@
-import mongoose, { isValidObjectId } from 'mongoose'
-import { User } from '../models/user.model.js'
+import mongoose from 'mongoose'
 import { Subscription } from '../models/subscription.model.js'
 import { ApiError } from '../utils/ApiError.js'
 import { ApiResponse } from '../utils/ApiResponse.js'
@@ -8,7 +7,6 @@ import { asyncHandler } from '../utils/asyncHandler.js'
 const createSubscription = asyncHandler(async (req, res) => {
   const { channelId: channel } = req.params
   const subscriber = req.user._id
-  // TODO: create subscription
   if (!mongoose.Types.ObjectId.isValid(channel)) {
     throw new ApiError(400, 'malformed request, invalid channelId')
   }
@@ -31,7 +29,6 @@ const createSubscription = asyncHandler(async (req, res) => {
 })
 
 const deleteSubscription = asyncHandler(async (req, res) => {
-  // TODO: delete subscription
   const { subscriptionId } = req.params
 
   if (!mongoose.Types.ObjectId.isValid(subscriptionId)) {
@@ -48,8 +45,8 @@ const deleteSubscription = asyncHandler(async (req, res) => {
 })
 
 const getSubscriptionDetail = asyncHandler(async (req, res) => {
-  //TODO: check is subscribed
-  //TODO: total no. subscriber of channel;
+  // check is subscribed
+  // total no. subscriber of channel
   const { channelId: channel } = req.params
   const subscriber = req.user._id
 

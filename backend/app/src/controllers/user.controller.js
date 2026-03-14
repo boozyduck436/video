@@ -29,6 +29,7 @@ const generateAccessAndRefreshToken = async (userId) => {
 
     return { accessToken, refreshToken }
   } catch (error) {
+    console.error(`generateAccessAndRefreshToken error : ${error}`)
     throw new ApiError(500, ' Something went wrong while generating refresh and access token')
   }
 }
@@ -466,7 +467,7 @@ const deleteUser = asyncHandler(async (req, res) => {
     throw new ApiError(404, 'user not found')
   }
 
-  const userBalance = await prisma.user.delete({
+  await prisma.user.delete({
     where: { userid: userId },
   })
 

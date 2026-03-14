@@ -1,0 +1,41 @@
+name: CI pipeline
+
+on:
+  push:
+    branches:
+      - 'main'
+  pull_request:
+    branches:
+      - 'main'
+
+jobs:
+  quality-check:
+    name: Format, Lint and Spellcheck
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: checkout repository
+        uses: actions/checkout@v4
+
+      - name: install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.30.1
+
+      - name: setup node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: 'pnpm'
+
+      - name: install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: check code format
+        run: pnpm -w format:check
+
+      - name: check code linting
+        run: pnpm -w lint:check
+
+      - name: check spelling
+        run: pnpm -w spell:check

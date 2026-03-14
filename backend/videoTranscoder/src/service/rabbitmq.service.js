@@ -32,7 +32,8 @@ export async function fetchOneRabbitmqMessage() {
     try {
       const data = JSON.parse(msg.content.toString('utf8'))
       key = data?.Key
-    } catch (err) {
+    } catch (error) {
+      console.error(`error: ${error}`)
       console.error('Invalid JSON:', msg.content.toString())
     }
 

@@ -3,13 +3,11 @@ import { Comment } from '../models/comment.model.js'
 import { ApiError } from '../utils/ApiError.js'
 import { ApiResponse } from '../utils/ApiResponse.js'
 import { asyncHandler } from '../utils/asyncHandler.js'
-import { Video } from '../models/video.model.js'
 
 const addComment = asyncHandler(async (req, res) => {
-  // TODO: add a comment to a video
   const owner = req?.user._id
-  const { content } = req?.body
-  const { postId, mediaType } = req?.params
+  const { content } = req.body
+  const { postId, mediaType } = req.params
 
   if (
     !owner ||
@@ -35,8 +33,8 @@ const addComment = asyncHandler(async (req, res) => {
 })
 
 const getComments = asyncHandler(async (req, res) => {
-  //TODO: get all comments for a video
-  //new TODO: populate is comment is liked by current login user
+  // get all comments for a video
+  // populate is comment is liked by current login user
   const { mediaType, postId } = req.params
   const { page = 1, limit = 10, sortBy = 'createdAt', sortType = 'desc' } = req.query
 
@@ -71,7 +69,6 @@ const getComments = asyncHandler(async (req, res) => {
 })
 
 const updateComment = asyncHandler(async (req, res) => {
-  // TODO: update a comment
   const { commentId } = req.params
   const { updatedContent } = req.body
 
@@ -92,7 +89,6 @@ const updateComment = asyncHandler(async (req, res) => {
 })
 
 const deleteComment = asyncHandler(async (req, res) => {
-  // TODO: delete a comment
   const { commentId } = req.params
 
   if (!mongoose.Types.ObjectId.isValid(commentId)) {

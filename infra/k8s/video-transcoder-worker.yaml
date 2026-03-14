@@ -1,7 +1,7 @@
 apiVersion: keda.sh/v1alpha1
 kind: ScaledJob
 metadata:
-  name: scalestream-video-transcoder
+  name: scalestream-video-transcoder-worker
   labels:
     part-of: scalestream
     component: worker
@@ -32,8 +32,8 @@ spec:
       spec:
         restartPolicy: Never
         containers:
-          - name: scalestream-video-transcoder
-            image: scalestream-video-transcoder
+          - name: scalestream-video-transcoder-worker
+            image: scalestream-video-transcoder-worker
             imagePullPolicy: Never
             resources:
               requests:

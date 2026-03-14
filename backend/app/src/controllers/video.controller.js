@@ -14,7 +14,7 @@ import validator from 'validator'
 
 const getAllVideos = asyncHandler(async (req, res) => {
   // get all videos based on query, sort, pagination
-  //it can use default feed and search and also search inside channel
+  // it can use default feed and search and also search inside channel
 
   const {
     query,
@@ -105,7 +105,7 @@ const publishAVideo = asyncHandler(async (req, res) => {
 
   const THUMBNAIL_MAX_IMAGE_SIZE = 10 * 1024 * 1024 // 10MB
   if (thumbnailContentLength > THUMBNAIL_MAX_IMAGE_SIZE) {
-    throw new ApiError(400, 'thumbnail should not be more than 10MB')
+    throw new ApiError(400, `thumbnail should not be more than ${THUMBNAIL_MAX_IMAGE_SIZE}`)
   }
 
   if (!validator.isHash(thumbnailChecksumSHA256, 'sha256')) {
@@ -181,7 +181,6 @@ const publishAVideo = asyncHandler(async (req, res) => {
 
 const getVideoById = asyncHandler(async (req, res) => {
   const { videoId } = req.params
-  //TODO: get video by id
   const video = await Video.findById(videoId)
 
   if (!video) {
@@ -192,7 +191,7 @@ const getVideoById = asyncHandler(async (req, res) => {
 })
 
 const updateVideo = asyncHandler(async (req, res) => {
-  //update video details like title, description, thumbnail
+  // update video details like title, description, thumbnail
   const owner = req.user?._id
   const { videoId } = req.params
   const {
@@ -201,7 +200,8 @@ const updateVideo = asyncHandler(async (req, res) => {
     isPublished,
     thumbnailContentType,
     thumbnailContentLength,
-    thumbnailChecksumSHA256 /*view*/,
+    thumbnailChecksumSHA256,
+    // view,
   } = req.body
 
   if (!mongoose.Types.ObjectId.isValid(videoId)) {
@@ -227,7 +227,7 @@ const updateVideo = asyncHandler(async (req, res) => {
       throw new ApiError(400, 'thumbnail should not be more than 10MB')
     }
 
-    if (!validator.isHash(videoChecksumSHA256, 'sha256')) {
+    if (!validator.isHash(thumbnailChecksumSHA256, 'sha256')) {
       throw new ApiError(400, 'Invalid Thumbnail SHA256 checksum')
     }
 
@@ -264,7 +264,6 @@ const updateVideo = asyncHandler(async (req, res) => {
 })
 
 const deleteVideo = asyncHandler(async (req, res) => {
-  //TODO: delete video
   const { videoId } = req.params
 
   const video = await Video.findByIdAndDelete(videoId)

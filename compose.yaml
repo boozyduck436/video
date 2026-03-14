@@ -1,5 +1,5 @@
 services:
-  scalestream-app:
+  app:
     build:
       context: ./
       dockerfile: ./backend/app/Dockerfile
@@ -25,12 +25,15 @@ services:
       STORAGE_ENDPOINT: ${STORAGE_ENDPOINT}
       STORAGE_EXTERNAL_ENDPOINT: ${STORAGE_EXTERNAL_ENDPOINT}
       STORAGE_FORCE_PATH_STYLE: ${STORAGE_FORCE_PATH_STYLE}
+      STARTUP_INITIAL_DELAY: ${STARTUP_INITIAL_DELAY}
+      STARTUP_RETRY_DELAY: ${STARTUP_RETRY_DELAY}
+      STARTUP_MAX_RETRIES: ${STARTUP_MAX_RETRIES}
     depends_on:
       mongodb:
         condition: service_healthy
       postgres:
         condition: service_healthy
-      bucket-storage:
+      minio:
         condition: service_healthy
     ports:
       - 127.0.0.1:8001:${PORT}
@@ -53,7 +56,7 @@ services:
     build:
       context: ./
       dockerfile: ./backend/videoTranscoder/Dockerfile
-    image: video-transcoder
+    image: scalestream-video-transcoder-worker
     environment:
       STORAGE_REGION: ${STORAGE_REGION}
       STORAGE_ACCESS_KEY: ${STORAGE_ACCESS_KEY}
@@ -65,7 +68,7 @@ services:
       RABBITMQ_QUEUE: ${RABBITMQ_QUEUE}
       RABBITMQ_URL: ${RABBITMQ_URL}
     depends_on:
-      bucket-storage:
+      minio:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
@@ -129,7 +132,7 @@ services:
       retries: 5
       start_period: 10s
 
-  bucket-storage:
+  minio:
     image: minio/minio:latest
     environment:
       MINIO_ROOT_USER: ${STORAGE_ACCESS_KEY}
@@ -161,10 +164,10 @@ services:
       retries: 5
       start_period: 10s
 
-  bucket-storage-init:
+  minio-init:
     image: minio/mc:latest
     depends_on:
-      bucket-storage:
+      minio:
         condition: service_healthy
     environment:
       MINIO_ROOT_USER: ${STORAGE_ACCESS_KEY}
@@ -173,8 +176,8 @@ services:
       STORAGE_STS_PASSWORD: ${STORAGE_STS_PASSWORD}
       STORAGE_ENDPOINT: ${STORAGE_ENDPOINT}
     volumes:
-      - ./infra/k8s/s3/init.sh/:/setup/init.sh
-      - ./infra/k8s/s3/sts-scalestream-readonly-policy.json:/setup/sts-scalestream-readonly-policy.json
+      - ./infra/config/s3/init.sh/:/setup/init.sh
+      - ./infra/config/s3/sts-scalestream-readonly-policy.json:/setup/sts-scalestream-readonly-policy.json
     networks:
       - scalestream
     entrypoint: ['/bin/sh', '/setup/init.sh']
@@ -212,7 +215,7 @@ services:
       RABBITMQ_DEFAULT_USER: ${RABBITMQ_USERNAME}
       RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD}
     volumes:
-      - ./infra/k8s/rabbitmq/init.sh:/usr/local/bin/init.sh:ro
+      - ./infra/config/rabbitmq/init.sh:/usr/local/bin/init.sh:ro
     entrypoint: ['/bin/sh', '/usr/local/bin/init.sh']
 
 volumes:

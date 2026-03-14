@@ -2,19 +2,34 @@
   "name": "scalestream",
   "version": "1.0.0",
   "type": "module",
-  "description": "",
   "scripts": {
-    "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "spell:check": "cspell . --cache --no-must-find-files",
+    "lint:check": "eslint . --cache",
+    "lint:fix": "eslint . --fix --cache",
+    "format:check": "prettier --check  --ignore-unknown .",
+    "format:fix": "prettier --write --ignore-unknown .",
+    "all:check": "pnpm -w spell:check && pnpm -w lint:check && pnpm -w format:check",
+    "all:fix": "pnpm -w lint:fix && pnpm -w format:fix ",
+    "prepare": "husky"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "lint-staged": {
+    "**/*": [
+      "prettier --check --ignore-unknown --cache",
+      "eslint --cache",
+      "cspell --cache --no-must-find-files"
+    ]
+  },
   "packageManager": "pnpm@10.30.1",
   "devDependencies": {
     "@cspell/dict-node": "^5.0.9",
     "@cspell/dict-typescript": "^3.2.3",
+    "@eslint/js": "^10.0.1",
     "cspell": "^9.6.4",
+    "eslint": "^10.0.2",
+    "eslint-config-prettier": "^10.1.8",
+    "globals": "^17.3.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.2.7",
     "prettier": "3.8.1"
   }
 }

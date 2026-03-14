@@ -11,7 +11,7 @@ WORKDIR /app
 COPY pnpm-lock.yaml  pnpm-workspace.yaml ./
 COPY backend/videoTranscoder/package.json  backend/videoTranscoder/package.json
 
-RUN pnpm install --production
+RUN pnpm install --production --frozen-lockfile
 
 COPY backend/videoTranscoder backend/videoTranscoder
 

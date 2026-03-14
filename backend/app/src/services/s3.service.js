@@ -26,7 +26,7 @@ const uploadObjectOnS3 = async function (file, Key) {
     await s3Client.send(command)
     return {
       Key,
-      url: `${process.env.STORAGE_EXTERNAL_ENDPOINT}/${process.env.STORAGE_BUCKET}/${Key}` || null,
+      url: `${process.env.STORAGE_EXTERNAL_ENDPOINT}/${process.env.STORAGE_BUCKET}/${Key}`,
     }
   } catch (error) {
     throw new ApiError(500, `uploadOnS3 error: ${error}`)
@@ -97,7 +97,8 @@ const listObjectsByPrefixOnS3 = async function (Prefix) {
       })
     )
 
-    if (list.KeyCount == 0) {
+    if (!list.KeyCount) {
+      return []
     }
 
     return list

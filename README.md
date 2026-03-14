@@ -111,7 +111,7 @@ Development mode uses volume mounts and `nodemon` for hot reloading:
 
 ```bash
 # 1. Clone the repository
-git clone https://github.com/nigam-raval/scalestream.git
+git clone https://github.com/boozyduck436/scalestream.git
 cd scalestream
 
 # 2. Create environment file

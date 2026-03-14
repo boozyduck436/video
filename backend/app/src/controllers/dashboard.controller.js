@@ -1,8 +1,4 @@
-import mongoose from 'mongoose'
 import { User } from '../models/user.model.js'
-import { Video } from '../models/video.model.js'
-import { Subscription } from '../models/subscription.model.js'
-import { Like } from '../models/like.model.js'
 import { ApiError } from '../utils/ApiError.js'
 import { ApiResponse } from '../utils/ApiResponse.js'
 import { asyncHandler } from '../utils/asyncHandler.js'
@@ -10,14 +6,12 @@ import { asyncHandler } from '../utils/asyncHandler.js'
 const getChannelStats = asyncHandler(async (req, res) => {
   const { username } = req.params
 
-  // TODO: Get the channel stats like
+  // Get the channel stats like
 
   //  total no. of subscribers,
-
   //  total no. of videos,
   //  sum of video views,
   //  sum of likes of all videos
-
   // total no. of tweets
   // sum of likes of all tweets
 

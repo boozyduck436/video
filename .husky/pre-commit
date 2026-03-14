@@ -1,0 +1,7 @@
+#!/bin/sh
+
+CONTAINER_NAME="scalestream-app-1"
+
+# user "node" so does not cause permission issue as we are using bind mount in dev container
+# env "NO_COLOR=1" as vscode git does not support color
+docker exec -e NO_COLOR=1 -u node $CONTAINER_NAME pnpm -w lint-staged

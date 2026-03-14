@@ -1,9 +1,9 @@
 services:
-  app-dev:
+  app:
     build:
       context: ./
-      dockerfile: ./backend/app/Dockerfile
-    image: app-dev-node
+      dockerfile: ./backend/app/Dockerfile.dev
+    image: scalestream-app:dev
     ports:
       - 127.0.0.1:8001:${PORT}
     volumes:
@@ -17,21 +17,21 @@ services:
         condition: service_healthy
       postgres:
         condition: service_healthy
-      bucket-storage:
+      minio:
         condition: service_healthy
     networks:
       - scalestream-dev
 
-  video-transcoder-worker-dev:
+  video-transcoder-worker:
     build:
       context: ./
       dockerfile: backend/videoTranscoder/Dockerfile.dev
-    image: video-transcoder-worker-dev-node
+    image: scalestream-video-transcoder-worker:dev
     volumes:
       - ./:/workspace/
     working_dir: /workspace/backend/videoTranscoder
     depends_on:
-      bucket-storage:
+      minio:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
@@ -110,7 +110,7 @@ services:
       retries: 5
       start_period: 10s
 
-  bucket-storage:
+  minio:
     image: minio/minio:latest
     environment:
       MINIO_ROOT_USER: ${STORAGE_ACCESS_KEY}
@@ -142,10 +142,10 @@ services:
       retries: 5
       start_period: 10s
 
-  bucket-storage-init:
+  minio-init:
     image: minio/minio:latest
     depends_on:
-      bucket-storage:
+      minio:
         condition: service_healthy
     environment:
       MINIO_ROOT_USER: ${STORAGE_ACCESS_KEY}
@@ -154,8 +154,8 @@ services:
       STORAGE_STS_PASSWORD: ${STORAGE_STS_PASSWORD}
       STORAGE_ENDPOINT: ${STORAGE_ENDPOINT}
     volumes:
-      - ./infra/k8s/s3/init.sh/:/setup/init.sh
-      - ./infra/k8s/s3/sts-scalestream-readonly-policy.json:/setup/sts-scalestream-readonly-policy.json
+      - ./infra/config/s3/init.sh/:/setup/init.sh
+      - ./infra/config/s3/sts-scalestream-readonly-policy.json:/setup/sts-scalestream-readonly-policy.json
     networks:
       - scalestream-dev
     entrypoint: ['/bin/sh', '/setup/init.sh']
@@ -193,7 +193,7 @@ services:
       RABBITMQ_DEFAULT_USER: ${RABBITMQ_USERNAME}
       RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD}
     volumes:
-      - ./infra/k8s/rabbitmq/init.sh:/usr/local/bin/init.sh:ro
+      - ./infra/config/rabbitmq/init.sh:/usr/local/bin/init.sh:ro
     entrypoint: ['/bin/sh', '/usr/local/bin/init.sh']
   pgadmin:
     image: dpage/pgadmin4:latest

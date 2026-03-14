@@ -31,8 +31,8 @@ const transferMoney = asyncHandler(async (req, res) => {
   if (amount <= 0) {
     throw new ApiError(400, 'amount must be positive')
   }
-
-  const result = await prisma.$transaction(async (tx) => {
+  // transaction
+  await prisma.$transaction(async (tx) => {
     const debit = await tx.user.updateMany({
       where: {
         userid: sender,
@@ -46,8 +46,8 @@ const transferMoney = asyncHandler(async (req, res) => {
     if (debit.count === 0) {
       throw new ApiError(400, 'Sender not found or insufficient balance')
     }
-
-    const credit = await tx.user.update({
+    // credit
+    await tx.user.update({
       where: {
         userid: receiver,
       },

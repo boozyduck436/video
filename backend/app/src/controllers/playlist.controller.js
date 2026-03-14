@@ -1,11 +1,10 @@
-import mongoose, { isValidObjectId } from 'mongoose'
+import mongoose from 'mongoose'
 import { Playlist } from '../models/playlist.model.js'
 import { ApiError } from '../utils/ApiError.js'
 import { ApiResponse } from '../utils/ApiResponse.js'
 import { asyncHandler } from '../utils/asyncHandler.js'
 
 const createPlaylist = asyncHandler(async (req, res) => {
-  //TODO: create playlist
   const { name, description } = req.body
   const owner = req.user._id
 
@@ -27,7 +26,6 @@ const createPlaylist = asyncHandler(async (req, res) => {
 })
 
 const getPlaylistById = asyncHandler(async (req, res) => {
-  //TODO: get playlist by id
   const { playlistId } = req.params
 
   if (!mongoose.Types.ObjectId.isValid(playlistId)) {
@@ -50,7 +48,6 @@ const getPlaylistById = asyncHandler(async (req, res) => {
 })
 
 const getUserPlaylists = asyncHandler(async (req, res) => {
-  //TODO: get user playlists
   const { userId } = req.params
 
   if (!mongoose.Types.ObjectId.isValid(userId)) {
@@ -73,7 +70,6 @@ const getUserPlaylists = asyncHandler(async (req, res) => {
 })
 
 const deletePlaylist = asyncHandler(async (req, res) => {
-  // TODO: delete playlist
   const { playlistId } = req.params
 
   if (!mongoose.Types.ObjectId.isValid(playlistId)) {
@@ -90,7 +86,6 @@ const deletePlaylist = asyncHandler(async (req, res) => {
 })
 
 const updatePlaylist = asyncHandler(async (req, res) => {
-  //TODO: update playlist
   const { playlistId } = req.params
   const { name, description } = req.body
 
@@ -145,7 +140,6 @@ const addVideoToPlaylist = asyncHandler(async (req, res) => {
 
 const removeVideoFromPlaylist = asyncHandler(async (req, res) => {
   const { playlistId, videoId } = req.params
-  // TODO: remove video from playlist
 
   if (!mongoose.Types.ObjectId.isValid(playlistId)) {
     throw new ApiError(400, 'malformed request, invalid playlistId')
