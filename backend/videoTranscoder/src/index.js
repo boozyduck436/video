@@ -9,6 +9,8 @@ import { removeBucketName } from './utils/removeBucketName.js'
 import { fileTypeFromFile } from 'file-type'
 
 dotenv.config({ quiet: true })
+
+
 ;(async () => {
   try {
     console.log('Starting Video Worker')

@@ -26,7 +26,7 @@ const addComment = asyncHandler(async (req, res) => {
   })
 
   if (!comment) {
-    throw ApiError(500, 'something went wrong, comment is not posted')
+    throw new ApiError(500, 'something went wrong, comment is not posted')
   }
 
   return res.status(200).json(new ApiResponse(200, comment, 'comment posted successfully'))
@@ -62,7 +62,7 @@ const getComments = asyncHandler(async (req, res) => {
     .sort(sortStr)
 
   if (!comments) {
-    throw ApiError(404, 'comments did not exist')
+    throw new ApiError(404, 'comments did not exist')
   }
 
   return res.status(200).json(new ApiResponse(200, comments, 'comment fetched successfully'))

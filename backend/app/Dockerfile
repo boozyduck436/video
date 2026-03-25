@@ -17,7 +17,7 @@ COPY backend/app backend/app
 WORKDIR /app/backend/app
 
 # Generate Client (With Dummy var to bypass validation)
-RUN DATABASE_URL="postgresql://dummy:dummy@localhost:5432/dummy" pnpm --filter ./backend/app... exec prisma generate
+RUN DATABASE_URL="postgresql://dummy:dummy@localhost:5432/dummy" pnpm exec prisma generate
 RUN pnpm prune --prod
 
-CMD ["sh", "-c", "pnpm start"]
+CMD ["node","src/index.js"]

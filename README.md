@@ -60,6 +60,9 @@ The video transcoder uses a **KEDA ScaledJob** that monitors the RabbitMQ `s3-ev
 
 In Docker Compose, KEDA is absent, so the worker runs in a polling loop (`sleep 5`) to simulate the same behavior.
 
+## Kubernetes Cluster Overview
+![Dashboard showing the live microservices for scalestream](docs/images/k8s-dashboard.png)
+
 ## Tech Stack
 
 | Layer | Technology |
@@ -111,7 +114,7 @@ Development mode uses volume mounts and `nodemon` for hot reloading:
 
 ```bash
 # 1. Clone the repository
-git clone https://github.com/boozyduck436/scalestream.git
+git clone https://github.com/boozyduck436/video/
 cd scalestream
 
 # 2. Create environment file
@@ -138,16 +141,20 @@ docker compose up --build
 ```bash
 cd infra/k8s
 
-# 1. Create environment file
-cp .env.k8s.example .env.k8s
+# Create environment file
 # Edit .env.k8s with your K8s-specific values
+cp .env.k8s.example .env.k8s
 
-# 2. Build and load Docker images into your cluster
-docker build -t scalestream-app ./backend/app
-docker build -t scalestream-video-transcoder ./backend/videoTranscoder
+# Move to scalestream root
+cd ../..
 
-# 3. Deploy with Kustomize
-kubectl apply -k .
+# Build and load Docker images into your cluster
+docker build -t scalestream-app  -f ./backend/app/Dockerfile .
+
+docker build -t scalestream-video-transcoder-worker -f backend/videoTranscoder/Dockerfile .
+
+# Deploy with Kustomize
+kubectl apply -k infra/k8s
 ```
 
 > **Important:** K8s hostnames (e.g., `mongodb-0.mongodb.default.svc.cluster.local`) differ from Docker Compose hostnames (e.g., `mongodb`). Always use the correct `.env` file for each deployment target. 
@@ -175,8 +182,8 @@ kubectl apply -k .
 
 | Service | Host |
 |---------|------|
-| API Server | `app.scalestream.local` |
-| MinIO API | `minio.scalestream.local` |
-| MinIO Console | `minio-console.scalestream.local` |
-| RabbitMQ Management | `rabbitmq-console.scalestream.local` |
+| API Server | `app.scalestream.<your-domain>` |
+| MinIO API | `minio.scalestream.<your-domain>` |
+| MinIO Console | `minio-console.scalestream.<your-domain>` |
+| RabbitMQ Management | `rabbitmq-console.scalestream.<your-domain>` |
 

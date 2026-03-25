@@ -45,7 +45,7 @@ spec:
 
           readinessProbe:
             httpGet:
-              path: /api/v1/healthcheck
+              path: /api/v1/healthcheck/ready
               port: 8001
             initialDelaySeconds: 30
             periodSeconds: 10
@@ -54,7 +54,7 @@ spec:
 
           livenessProbe:
             httpGet:
-              path: /api/v1/healthcheck
+              path: /api/v1/healthcheck/live
               port: 8001
             initialDelaySeconds: 30
             periodSeconds: 20

@@ -1,0 +1,6 @@
+**/.env*
+**/node_modules
+**/generated/prisma
+**/.gitignore
+**/Dockerfile*
+**/.dockerignore

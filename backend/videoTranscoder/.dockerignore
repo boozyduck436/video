@@ -1,7 +1,0 @@
-.env
-node_modules
-tmp
-hls
-.gitignore
-compose.yaml
-

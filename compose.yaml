@@ -45,7 +45,7 @@ services:
           'CMD',
           'node',
           '-e',
-          "fetch('http://127.0.0.1:8001/api/v1/healthcheck').then(res => process.exit(res.ok ? 0 : 1))",
+          "fetch('http://127.0.0.1:8001/api/v1/healthcheck/live').then(res => process.exit(res.ok ? 0 : 1))",
         ]
       interval: 10s
       timeout: 5s

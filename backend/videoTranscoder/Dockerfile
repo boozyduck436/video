@@ -17,4 +17,4 @@ COPY backend/videoTranscoder backend/videoTranscoder
 
 WORKDIR /app/backend/videoTranscoder
 
-CMD ["sh", "-c", "pnpm start"]
+CMD ["node","src/index.js"]
